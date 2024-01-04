@@ -150,8 +150,8 @@ func CheckHWt(hostname string) {
 				tGPUhsSum += tGPUhs
 				time.Sleep(5 * time.Second)
 			}
-			log.Println("tGPUsum = ", tGPUsum)
-			log.Println("tGPUhsSum = ", tGPUhsSum)
+			log.Printf("tGPUsum = %.1f\n", tGPUsum)
+			log.Printf("tGPUhsSum = %.1f\n", tGPUhsSum)
 			tGPUavg := tGPUsum / 6
 			tGPUhsAvg := tGPUhsSum / 6
 			if tGPUavg < GPUtmax-DeltaT && tGPUhsAvg < GPUhsTmax-DeltaT {
