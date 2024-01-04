@@ -42,7 +42,7 @@ func getSpeed() (string, float64) {
 func updateGeoLite(mmdbASN, mmdbCity string) {
 	_, err := http.Get("https://github.com")
 	if err != nil {
-		fmt.Println("Сайт недоступен")
+		log.Println("[ERROR] github.com недоступен. Обновление GeoLite невозможно")
 	} else {
 		asnURL := "https://github.com/P3TERX/GeoLite.mmdb/raw/download/GeoLite2-ASN.mmdb"
 		cityURL := "https://github.com/P3TERX/GeoLite.mmdb/raw/download/GeoLite2-City.mmdb"
@@ -139,7 +139,7 @@ func restartGeoLite(mmdbASN, mmdbCity string) {
 func onlineDBip(ip string) (text string) {
 	_, err := http.Get("https://ipinfo.io")
 	if err != nil {
-		fmt.Println("Сайт недоступен")
+		fmt.Println("Сайт ipinfo.io недоступен")
 	} else {
 		apiURL := fmt.Sprintf("https://ipinfo.io/%s/json", ip)
 		resp, err := http.Get(apiURL)

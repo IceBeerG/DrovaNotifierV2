@@ -177,93 +177,102 @@ func CheckHWt(hostname string) {
 func GetTemperature() (tCPU, tGPU, tGPUhs, fan1, fanp1, fan2, fanp2 float64, tMessage string) {
 	var body []byte
 	tMessage = ""
-	urlLHM := "http://localhost:8085/data.json"
-	respLHM, err := http.Get(urlLHM)
+	_, err := http.Get("http://localhost:8085/data.json")
 	if err != nil {
-		log.Println(err)
-		restart()
-	}
-	defer respLHM.Body.Close()
-
-	body, err = io.ReadAll(respLHM.Body)
-	if err != nil {
-		log.Println(err)
-	}
-
-	tCPU, tGPU, tGPUhs, fan1, fanp1, fan2, fanp2 = -1, -1, -1, -1, -1, -1, -1
-
-	tempCPU1, tempCPU2 := getTemp(body, "cpu")
-	if tempCPU1 != "-1" {
-		tMessage += fmt.Sprintf("t CPU = %s\n", tempCPU1)
-		tCPU = takeFloat(tempCPU1)
-	} else if tempCPU2 != "-1" {
-		tMessage += fmt.Sprintf("t CPU = %s\n", tempCPU2)
-		tCPU = takeFloat(tempCPU2)
-	}
-
-	tempGPUnv1, tempGPUnv2 := getTemp(body, "gpuNVidia")
-
-	if tempGPUnv1 != "-1" {
-		tMessage += fmt.Sprintf("t GPU = %s\n", tempGPUnv1)
-		tGPU = takeFloat(tempGPUnv1)
-
-		if tempGPUnv2 != "-1" {
-			tMessage += fmt.Sprintf("t GPU HotSpot= %s\n", tempGPUnv2)
-			tGPUhs = takeFloat(tempGPUnv2)
-		}
-
-		fanNV1, fanNV2 := getTemp(body, "fanNVidia")
-		if fanNV1 != "-1" {
-			fanNVp1, _ := getTemp(body, "fanNVp")
-			tMessage += fmt.Sprintf("t GPU fan1 = %s\nGPU fan1 = %s\n", fanNV1, fanNVp1)
-			fan1 = takeFloat(fanNV1)
-			fanp1 = takeFloat(fanNVp1)
-		}
-		if fanNV2 != "-1" {
-			_, fanNVp2 := getTemp(body, "fanNVp")
-			tMessage += fmt.Sprintf("t GPU fan2 = %s\nGPU fan2 = %s\n", fanNV2, fanNVp2)
-			fan2 = takeFloat(fanNV2)
-			fanp2 = takeFloat(fanNVp2)
+		log.Println("[ERROR] web-сервер LHM недоступен")
+		err := SendMessage(BotToken, Chat_IDint, "web-сервер LHM недоступен")
+		if err != nil {
+			log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 		}
 	} else {
-		tempGPUa1, tempGPUa2 := getTemp(body, "gpuAMD")
-		if tempGPUa1 != "-1" {
-			tMessage += fmt.Sprintf("t GPU = %s\n", tempGPUa1)
-			tGPU = takeFloat(tempGPUa1)
-			if tempGPUa2 != "-1" {
-				tMessage += fmt.Sprintf("t GPU HotSpot= %s\n", tempGPUa2)
-				tGPUhs = takeFloat(tempGPUa2)
+		urlLHM := "http://localhost:8085/data.json"
+		respLHM, err := http.Get(urlLHM)
+		if err != nil {
+			log.Println(err)
+			// restart()
+		}
+		defer respLHM.Body.Close()
+
+		body, err = io.ReadAll(respLHM.Body)
+		if err != nil {
+			log.Println(err)
+		}
+
+		tCPU, tGPU, tGPUhs, fan1, fanp1, fan2, fanp2 = -1, -1, -1, -1, -1, -1, -1
+
+		tempCPU1, tempCPU2 := getTemp(body, "cpu")
+		if tempCPU1 != "-1" {
+			tMessage += fmt.Sprintf("t CPU = %s\n", tempCPU1)
+			tCPU = takeFloat(tempCPU1)
+		} else if tempCPU2 != "-1" {
+			tMessage += fmt.Sprintf("t CPU = %s\n", tempCPU2)
+			tCPU = takeFloat(tempCPU2)
+		}
+
+		tempGPUnv1, tempGPUnv2 := getTemp(body, "gpuNVidia")
+
+		if tempGPUnv1 != "-1" {
+			tMessage += fmt.Sprintf("t GPU = %s\n", tempGPUnv1)
+			tGPU = takeFloat(tempGPUnv1)
+
+			if tempGPUnv2 != "-1" {
+				tMessage += fmt.Sprintf("t GPU HotSpot= %s\n", tempGPUnv2)
+				tGPUhs = takeFloat(tempGPUnv2)
 			}
 
-			fanA1, fanA2 := getTemp(body, "fanAMD")
-			if fanA1 != "-1" {
-				tMessage += fmt.Sprintf("t GPU fan1 = %s\n", fanA1)
-				fan1 = takeFloat(fanA1)
+			fanNV1, fanNV2 := getTemp(body, "fanNVidia")
+			if fanNV1 != "-1" {
+				fanNVp1, _ := getTemp(body, "fanNVp")
+				tMessage += fmt.Sprintf("t GPU fan1 = %s\nGPU fan1 = %s\n", fanNV1, fanNVp1)
+				fan1 = takeFloat(fanNV1)
+				fanp1 = takeFloat(fanNVp1)
 			}
-			if fanA2 != "-1" {
-				tMessage += fmt.Sprintf("t GPU fan2 = %s\n", fanA2)
-				fan2 = takeFloat(fanA2)
+			if fanNV2 != "-1" {
+				_, fanNVp2 := getTemp(body, "fanNVp")
+				tMessage += fmt.Sprintf("t GPU fan2 = %s\nGPU fan2 = %s\n", fanNV2, fanNVp2)
+				fan2 = takeFloat(fanNV2)
+				fanp2 = takeFloat(fanNVp2)
 			}
-
 		} else {
-			tempGPUi1, tempGPUi2 := getTemp(body, "gpuINTEL")
-			if tempGPUi1 != "-1" {
-				tMessage += fmt.Sprintf("t GPU = %s\n", tempGPUi1)
-				tGPU = takeFloat(tempGPUi1)
-
-				if tempGPUi2 != "-1" {
-					tMessage += fmt.Sprintf("t GPU HotSpot= %s\n", tempGPUi2)
-					tGPUhs = takeFloat(tempGPUi2)
+			tempGPUa1, tempGPUa2 := getTemp(body, "gpuAMD")
+			if tempGPUa1 != "-1" {
+				tMessage += fmt.Sprintf("t GPU = %s\n", tempGPUa1)
+				tGPU = takeFloat(tempGPUa1)
+				if tempGPUa2 != "-1" {
+					tMessage += fmt.Sprintf("t GPU HotSpot= %s\n", tempGPUa2)
+					tGPUhs = takeFloat(tempGPUa2)
 				}
 
-				fanI1, fanI2 := getTemp(body, "fanINTEL")
-				if fanI1 != "-1" {
-					tMessage += fmt.Sprintf("t GPU fan1 = %s\n", fanI1)
-					fan1 = takeFloat(fanI1)
+				fanA1, fanA2 := getTemp(body, "fanAMD")
+				if fanA1 != "-1" {
+					tMessage += fmt.Sprintf("t GPU fan1 = %s\n", fanA1)
+					fan1 = takeFloat(fanA1)
 				}
-				if fanI2 != "-1" {
-					tMessage += fmt.Sprintf("t GPU fan2 = %s\n", fanI2)
-					fan2 = takeFloat(fanI2)
+				if fanA2 != "-1" {
+					tMessage += fmt.Sprintf("t GPU fan2 = %s\n", fanA2)
+					fan2 = takeFloat(fanA2)
+				}
+
+			} else {
+				tempGPUi1, tempGPUi2 := getTemp(body, "gpuINTEL")
+				if tempGPUi1 != "-1" {
+					tMessage += fmt.Sprintf("t GPU = %s\n", tempGPUi1)
+					tGPU = takeFloat(tempGPUi1)
+
+					if tempGPUi2 != "-1" {
+						tMessage += fmt.Sprintf("t GPU HotSpot= %s\n", tempGPUi2)
+						tGPUhs = takeFloat(tempGPUi2)
+					}
+
+					fanI1, fanI2 := getTemp(body, "fanINTEL")
+					if fanI1 != "-1" {
+						tMessage += fmt.Sprintf("t GPU fan1 = %s\n", fanI1)
+						fan1 = takeFloat(fanI1)
+					}
+					if fanI2 != "-1" {
+						tMessage += fmt.Sprintf("t GPU fan2 = %s\n", fanI2)
+						fan2 = takeFloat(fanI2)
+					}
 				}
 			}
 		}
