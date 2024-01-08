@@ -23,6 +23,10 @@ type Node struct {
 
 func CheckHWt(hostname string) {
 	var xCPU, xGPU, xGPUf bool = false, false, false
+	var hname string = ""
+	if viewHostname {
+		hname = hostname
+	}
 	for {
 		var fanZ float64
 		tCPU, tGPU, tGPUhs, fan1, fanp1, fan2, fanp2, _ := GetTemperature()
@@ -46,8 +50,8 @@ func CheckHWt(hostname string) {
 			log.Printf("tCPUsum = %.1f\n", tCPUsum)
 			tCPUavg := tCPUsum / 6
 			if tCPUavg > CPUtmax {
-				chatMessage := fmt.Sprintf("Внимание! "+hostname+"\nt CPU: %.1f °C\nt CPU avg:  %.1f °C", tCPU, tCPUavg)
-				err := SendMessage(BotToken, Chat_IDint, chatMessage)
+				chatMessage := fmt.Sprintf("Внимание! "+hname+"\nt CPU: %.1f °C\nt CPU avg:  %.1f °C", tCPU, tCPUavg)
+				err := SendMessage(BotToken, ServiceChatID, chatMessage)
 				if err != nil {
 					log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 				}
@@ -63,8 +67,8 @@ func CheckHWt(hostname string) {
 			log.Printf("tCPUsum = %.1f\n", tCPUsum)
 			tCPUavg := tCPUsum / 6
 			if tCPUavg < CPUtmax-DeltaT {
-				chatMessage := fmt.Sprintf("Норма. "+hostname+"\nt CPU: %.1f °C\nt CPU avg:  %.1f °C", tCPU, tCPUavg)
-				err := SendMessage(BotToken, Chat_IDint, chatMessage)
+				chatMessage := fmt.Sprintf("Норма. "+hname+"\nt CPU: %.1f °C\nt CPU avg:  %.1f °C", tCPU, tCPUavg)
+				err := SendMessage(BotToken, ServiceChatID, chatMessage)
 				if err != nil {
 					log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 				}
@@ -86,12 +90,12 @@ func CheckHWt(hostname string) {
 				tGPUhs = tGPU
 			}
 			if (tGPU > FANt || tGPUhs > FANt) && (fan1 < FANrpm || fanZ < FANrpm) {
-				chatMessage = fmt.Sprintf("Внимание! "+hostname+"\nt GPU: %.1f °C\nt HotSpot: %.1f °C\n", tGPU, tGPUhs)
+				chatMessage = fmt.Sprintf("Внимание! "+hname+"\nt GPU: %.1f °C\nt HotSpot: %.1f °C\n", tGPU, tGPUhs)
 				chatMessage += fmt.Sprintf("Fan1: %.0f RPM - %.0f %%\n", fan1, fanp1)
 				if fan2 != -1 {
 					chatMessage += fmt.Sprintf("Fan2: %.0f RPM - %.0f %%\n", fan2, fanp2)
 				}
-				err := SendMessage(BotToken, Chat_IDint, chatMessage)
+				err := SendMessage(BotToken, ServiceChatID, chatMessage)
 				if err != nil {
 					log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 				}
@@ -99,12 +103,12 @@ func CheckHWt(hostname string) {
 			}
 		} else if xGPUf && tGPU > FANt && tGPUhs > FANt && fan1 > FANrpm && fanZ > FANrpm {
 			var chatMessage string
-			chatMessage = fmt.Sprintf("Норма. "+hostname+"\nt GPU: %.1f °C\nt HotSpot: %.1f °C\n", tGPU, tGPUhs)
+			chatMessage = fmt.Sprintf("Норма. "+hname+"\nt GPU: %.1f °C\nt HotSpot: %.1f °C\n", tGPU, tGPUhs)
 			chatMessage += fmt.Sprintf("Fan1: %.0f RPM - %.0f %%\n", fan1, fanp1)
 			if fan2 != -1 {
 				chatMessage += fmt.Sprintf("Fan2: %.0f RPM - %.0f %%\n", fan2, fanp2)
 			}
-			err := SendMessage(BotToken, Chat_IDint, chatMessage)
+			err := SendMessage(BotToken, ServiceChatID, chatMessage)
 			if err != nil {
 				log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 			}
@@ -127,14 +131,14 @@ func CheckHWt(hostname string) {
 			tGPUhsAvg := tGPUhsSum / 6
 			if tGPUavg > GPUtmax || tGPUhsAvg > GPUhsTmax {
 				log.Printf("tGPUavg = %.1f, tGPUhsAvg = %.1f\n", tGPUavg, tGPUhsAvg)
-				chatMessage = fmt.Sprintf("Внимание! "+hostname+"\nt GPU: %.1f °C\nt HotSpot: %.1f °C\n", tGPU, tGPUhs)
+				chatMessage = fmt.Sprintf("Внимание! "+hname+"\nt GPU: %.1f °C\nt HotSpot: %.1f °C\n", tGPU, tGPUhs)
 				if fan1 != -1 {
 					chatMessage += fmt.Sprintf("Fan1: %.0f RPM - %.0f %%\n", fan1, fanp1)
 					if fan2 != -1 {
 						chatMessage += fmt.Sprintf("Fan2: %.0f RPM - %.0f %%\n", fan2, fanp2)
 					}
 				}
-				err := SendMessage(BotToken, Chat_IDint, chatMessage)
+				err := SendMessage(BotToken, ServiceChatID, chatMessage)
 				if err != nil {
 					log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 				}
@@ -156,14 +160,14 @@ func CheckHWt(hostname string) {
 			tGPUhsAvg := tGPUhsSum / 6
 			if tGPUavg < GPUtmax-DeltaT && tGPUhsAvg < GPUhsTmax-DeltaT {
 				log.Printf("tGPUavg = %.1f, tGPUhsAvg = %.1f\n", tGPUavg, tGPUhsAvg)
-				chatMessage = fmt.Sprintf("Норма. "+hostname+"\nt GPU: %.1f °C\nt HotSpot: %.1f °C\n", tGPU, tGPUhs)
+				chatMessage = fmt.Sprintf("Норма. "+hname+"\nt GPU: %.1f °C\nt HotSpot: %.1f °C\n", tGPU, tGPUhs)
 				if fan1 != -1 {
 					chatMessage += fmt.Sprintf("Fan1: %.0f RPM - %.0f %%\n", fan1, fanp1)
 					if fan2 != -1 {
 						chatMessage += fmt.Sprintf("Fan2: %.0f RPM - %.0f %%\n", fan2, fanp2)
 					}
 				}
-				err := SendMessage(BotToken, Chat_IDint, chatMessage)
+				err := SendMessage(BotToken, ServiceChatID, chatMessage)
 				if err != nil {
 					log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 				}
@@ -180,7 +184,7 @@ func GetTemperature() (tCPU, tGPU, tGPUhs, fan1, fanp1, fan2, fanp2 float64, tMe
 	_, err := http.Get("http://localhost:8085/data.json")
 	if err != nil {
 		log.Println("[ERROR] web-сервер LHM недоступен")
-		err := SendMessage(BotToken, Chat_IDint, "web-сервер LHM недоступен")
+		err := SendMessage(BotToken, ServiceChatID, "web-сервер LHM недоступен")
 		if err != nil {
 			log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 		}

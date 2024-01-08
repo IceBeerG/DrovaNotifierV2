@@ -82,11 +82,6 @@ type Win32_OperatingSystem struct {
 }
 
 func main() {
-	time.Sleep(20 * time.Second)
-	BotToken, Chat_IDint, UserID, ServiceChatID = getConfigBot()
-	if ServiceChatID == 0 {
-		ServiceChatID = Chat_IDint
-	}
 	logFilePath := "log.log" // Имя файла для логирования ошибок
 	logFilePath = filepath.Join(filepath.Dir(os.Args[0]), logFilePath)
 	// Открываем файл для записи логов
@@ -105,19 +100,26 @@ func main() {
 	// Устанавливаем файл в качестве вывода для логгера
 	log.SetOutput(logFile)
 
+	// Получаем имя ПК
+	stationName, err := os.Hostname()
+	if err != nil {
+		log.Println("[ERROR] Ошибка при получении имени компьютера: ", err, getLine())
+		return
+	}
+	hostname = stationName
+
+	time.Sleep(20 * time.Second)
+	BotToken, Chat_IDint, UserID, ServiceChatID = getConfigBot(hostname)
+	if ServiceChatID == 0 {
+		ServiceChatID = Chat_IDint
+	}
+
 	log.Println("[INFO] Start program")
 
 	fileGames = filepath.Join(dir, "games.txt")
 	fileConfig = filepath.Join(dir, "config.txt")
 	mmdbASN = filepath.Join(dir, "GeoLite2-ASN.mmdb")   // файл оффлайн базы IP. Провайдер
 	mmdbCity = filepath.Join(dir, "GeoLite2-City.mmdb") // файл оффлайн базы IP. Город и область
-
-	// Получаем имя ПК
-	hostname, err = os.Hostname()
-	if err != nil {
-		log.Println("[ERROR] Ошибка при получении имени компьютера: ", err, getLine())
-		return
-	}
 
 	getConfigFile(fileConfig)
 
@@ -533,7 +535,11 @@ func messageStartWin(hostname string) {
 
 	// Если прошло менее 5 минут с момента запуска Windows
 	if duration.Minutes() < 5 {
-		message := fmt.Sprintf("Внимание! Станция %s запущена менее 5 минут назад!\nВремя запуска - %s", hostname, formattedTime)
+		var hname string = ""
+		if viewHostname {
+			hname = hostname + " "
+		}
+		message := fmt.Sprintf("Внимание! Станция %sзапущена менее 5 минут назад!\nВремя запуска - %s", hname, formattedTime)
 		err := SendMessage(BotToken, ServiceChatID, message)
 		if err != nil {
 			log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
@@ -563,10 +569,13 @@ func diskSpace(hostname string, checkFreeSpace bool) {
 				text += fmt.Sprintf("На диске %s свободно менее 10%%, %.2f Гб\n", partition.Mountpoint, freeSpace)
 			}
 		}
-
+		var hname string = ""
+		if viewHostname {
+			hname = fmt.Sprintf(" Станция %s", hostname)
+		}
 		// Если text не пустой, значит есть диск со свободным местом менее 10%, отправляем сообщение
 		if text != "" {
-			message := fmt.Sprintf("Внимание! Станция %s\n%s", hostname, text)
+			message := fmt.Sprintf("Внимание!%s\n%s", hname, text)
 			log.Print(text)
 			err := SendMessage(BotToken, ServiceChatID, message)
 			if err != nil {
@@ -578,6 +587,10 @@ func diskSpace(hostname string, checkFreeSpace bool) {
 
 // проверка файлов античитов
 func antiCheat(hostname string, checkAntiCheat bool) {
+	var hname string = ""
+	if viewHostname {
+		hname = fmt.Sprintf(" Станция %s", hostname)
+	}
 	if checkAntiCheat {
 		antiCheat := map[string]string{
 			"EasyAntiCheat_EOS": "C:\\Program Files (x86)\\EasyAntiCheat_EOS\\EasyAntiCheat_EOS.exe",
@@ -588,8 +601,8 @@ func antiCheat(hostname string, checkAntiCheat bool) {
 			if _, err := os.Stat(filePath); err == nil {
 				log.Printf("[INFO] Файл %s в наличии\n", filePath)
 			} else if os.IsNotExist(err) {
-				log.Printf("[INFO] Внимание! Станция %s\nОтсутствует файл %s", hostname, key)
-				message := fmt.Sprintf("[INFO] Внимание! Станция %s\nОтсутствует файл %s", hostname, key)
+				log.Printf("[INFO] Внимание!%s\nОтсутствует файл %s", hname, key)
+				message := fmt.Sprintf("[INFO] Внимание!%s\nОтсутствует файл %s", hname, key)
 				err := SendMessage(BotToken, ServiceChatID, message)
 				if err != nil {
 					log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
@@ -716,14 +729,18 @@ func rebootPC() {
 }
 
 func commandBot(tokenBot, hostname string, userID int64) {
-	var message, hname string
+	var messageT, honame, hname string
 
-	hname = strings.ToLower(hostname)
+	honame = strings.ToLower(hostname)
 	bot, err := tgbotapi.NewBotAPI(tokenBot)
 	if err != nil {
 		log.Println(err)
 	}
-
+	if viewHostname {
+		hname = hostname + "\n"
+	} else {
+		hname = ""
+	}
 	// таймаут обновления бота
 	upd := tgbotapi.NewUpdate(0)
 	upd.Timeout = 60
@@ -739,13 +756,13 @@ func commandBot(tokenBot, hostname string, userID int64) {
 		if update.Message != nil {
 
 			if update.Message.From.ID == userID {
-				message = strings.ToLower(update.Message.Text)
+				messageT = strings.ToLower(update.Message.Text)
 
-				if strings.Contains(message, "/reboot") {
-					if strings.Contains(message, hname) { // Проверяем, что в тексте упоминается имя ПК
+				if strings.Contains(messageT, "/reboot") {
+					if strings.Contains(messageT, honame) { // Проверяем, что в тексте упоминается имя ПК
 						log.Println("Перезагрузка ПК по команде из телеграмма")
 						message := fmt.Sprintf("Станция %s будет перезагружена по команде из телеграмма", hostname)
-						err := SendMessage(BotToken, Chat_IDint, message)
+						err := SendMessage(BotToken, userID, message)
 						if err != nil {
 							log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 							return
@@ -754,13 +771,14 @@ func commandBot(tokenBot, hostname string, userID int64) {
 					} else {
 						anotherPC(hostname)
 					}
-				} else if strings.Contains(message, "/status") {
+				} else if strings.Contains(messageT, "/status") {
 					var serv serverManager // структура serverManager
-					responseData, err := getFromURL(UrlSessions, "server_id", serverID)
+					responseData, err := getFromURL(UrlServers, "server_id", serverID)
+					log.Println("получили команду /статус")
 					if err != nil {
 						chatMessage := hostname + " Невозможно получить данные с сайта"
 						log.Println("[ERROR] Невозможно получить данные с сайта")
-						err := SendMessage(BotToken, ServiceChatID, chatMessage) // отправка сообщения
+						err := SendMessage(BotToken, userID, chatMessage) // отправка сообщения
 						if err != nil {
 							log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 						}
@@ -768,14 +786,17 @@ func commandBot(tokenBot, hostname string, userID int64) {
 						json.Unmarshal([]byte(responseData), &serv) // декодируем JSON файл
 
 						var serverName, status, messageText string
-
+						messageText = ""
 						i := 0
-						messageText = fmt.Sprintf("%s\n", hostname)
+						// messageText = fmt.Sprint(hname)
+						// log.Println("/статус - ошибок нет, собираем данные")
 						for range serv {
+							// log.Println("/статус - зашли в рэндж серверов")
 							var sessionStart, server_ID string
 							serverName = serv[i].Name
 							status = serv[i].Status // Получаем статус сервера
 							server_ID = serv[i].Server_id
+							// log.Println(serverName, "-", status, "-", server_ID)
 
 							if status == "BUSY" || status == "HANDSHAKE" { // Получаем время начала, если станция занят
 								var data SessionsData // структура SessionsData
@@ -783,7 +804,7 @@ func commandBot(tokenBot, hostname string, userID int64) {
 								if err != nil {
 									chatMessage := hostname + " Невозможно получить данные с сайта"
 									log.Println("[ERROR] Невозможно получить данные с сайта")
-									err := SendMessage(BotToken, ServiceChatID, chatMessage) // отправка сообщения
+									err := SendMessage(BotToken, userID, chatMessage) // отправка сообщения
 									if err != nil {
 										log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 									}
@@ -796,22 +817,22 @@ func commandBot(tokenBot, hostname string, userID int64) {
 							} else {
 								sessionStart = ""
 							}
-							messageText += fmt.Sprintf("%s - %s%s\n", serverName, status, sessionStart)
+							messageText += fmt.Sprintf("%s - %s%s\n\n", serverName, status, sessionStart)
 							i++
 						}
 
-						err := SendMessage(BotToken, Chat_IDint, messageText)
+						err := SendMessage(BotToken, userID, messageText)
 						if err != nil {
 							log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 							return
 						}
 					}
-				} else if strings.Contains(message, "/visible") {
-					if strings.Contains(message, hname) { // Проверяем, что в тексте упоминается имя ПК
+				} else if strings.Contains(messageT, "/visible") {
+					if strings.Contains(messageT, honame) { // Проверяем, что в тексте упоминается имя ПК
 						viewStation("true", serverID)
 						log.Printf("Станция %s в сети\n", hostname)
 						message := fmt.Sprintf("Станция %s видна клиентам", hostname)
-						err := SendMessage(BotToken, Chat_IDint, message)
+						err := SendMessage(BotToken, userID, message)
 						if err != nil {
 							log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 							return
@@ -819,12 +840,12 @@ func commandBot(tokenBot, hostname string, userID int64) {
 					} else {
 						anotherPC(hostname)
 					}
-				} else if strings.Contains(message, "/invisible") {
-					if strings.Contains(message, hname) { // Проверяем, что в тексте упоминается имя ПК
+				} else if strings.Contains(messageT, "/invisible") {
+					if strings.Contains(messageT, honame) { // Проверяем, что в тексте упоминается имя ПК
 						viewStation("false", serverID)
 						log.Printf("Станция %s спрятана\n", hostname)
 						message := fmt.Sprintf("Станция %s спрятана от клиентов", hostname)
-						err := SendMessage(BotToken, Chat_IDint, message)
+						err := SendMessage(BotToken, userID, message)
 						if err != nil {
 							log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 							return
@@ -832,20 +853,20 @@ func commandBot(tokenBot, hostname string, userID int64) {
 					} else {
 						anotherPC(hostname)
 					}
-				} else if strings.Contains(message, "/temp") {
-					// if strings.Contains(message, hname) { // Проверяем, что в тексте упоминается имя ПК
+				} else if strings.Contains(messageT, "/temp") {
 					log.Println("Получение температур и оборотов вентиляторов")
-					_, _, _, _, _, _, _, message := GetTemperature()
-					// message := fmt.Sprintf("Станция %s будет перезагружена по команде из телеграмма", hostname)
-					message = hname + "\n" + message
-					err := SendMessage(BotToken, Chat_IDint, message)
+					var message string
+					_, _, _, _, _, _, _, message = GetTemperature()
+
+					message = hname + message
+					err := SendMessage(BotToken, userID, message)
 					if err != nil {
 						log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 						return
 					}
 				} else {
 					messageText := "Неизвестная команда"
-					err := SendMessage(BotToken, Chat_IDint, messageText)
+					err := SendMessage(BotToken, userID, messageText)
 					if err != nil {
 						log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 						return

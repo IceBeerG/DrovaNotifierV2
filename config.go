@@ -7,26 +7,29 @@ import (
 )
 
 var ( // true - включение функции, false - выключение
-	BotToken      string         // токен бота
-	Chat_IDint    int64          // определяем ID чата получателя
-	UserID        int64          // ID пользователя, от которого принимаются команды
-	ServiceChatID int64          // чат для сервисных сообщений
-	CommandON     bool   = false // включить команды управления ботом
+	BotToken      string // токен бота
+	Chat_IDint    int64  // определяем ID чата получателя
+	UserID        int64  // ID пользователя, от которого принимаются команды
+	ServiceChatID int64  // чат для сервисных сообщений
+
+	CommandON    bool = true // включить команды управления ботом
+	viewHostname bool = true // указывать имя станции в сообщениях
+	oneBot4all   bool = true // для всех станций используем 1 учетку бота
 
 	OnlineIpInfo      bool = true  // инфо по IP online
 	AutoUpdateGeolite bool = false // автообновление файлов GeoLite с Github
 
-	CheckAntiCheat bool    = true  // проверка наличия файлов EasyAntiCheat.exe и EasyAntiCheat_EOS.exe
-	CheckFreeSpace bool    = true  // проверка свободного места на дисках
-	CheckTempON    bool    = false // мониторинг температур
-	FANt           float64 = 75    // порог проверки работы вентиляторов видеокарты
-	FANrpm         float64 = 800   // минимальные обороты при FANt
-	CPUtmax        float64 = 85    // порог температуры процессора
-	GPUtmax        float64 = 85    // порог температуры ядра видеокарты
-	GPUhsTmax      float64 = 90    // порог температуры HotSpot видеокарты
-	DeltaT         float64 = 5     // дельта среднего значения температур от от порога предупреждения. Для сообщения о нормализации температур
+	CheckAntiCheat bool    = true // проверка наличия файлов EasyAntiCheat.exe и EasyAntiCheat_EOS.exe
+	CheckFreeSpace bool    = true // проверка свободного места на дисках
+	CheckTempON    bool    = true // мониторинг температур
+	FANt           float64 = 75   // порог проверки работы вентиляторов видеокарты
+	FANrpm         float64 = 800  // минимальные обороты при FANt
+	CPUtmax        float64 = 85   // порог температуры процессора
+	GPUtmax        float64 = 85   // порог температуры ядра видеокарты
+	GPUhsTmax      float64 = 90   // порог температуры HotSpot видеокарты
+	DeltaT         float64 = 5    // дельта среднего значения температур от от порога предупреждения. Для сообщения о нормализации температур
 
-	TrialON      bool   = true  // сбор статистики по триальщикам в trial.txt. false - не собирается статистика в trial.txt
+	TrialON      bool   = false // сбор статистики по триальщикам в trial.txt. false - не собирается статистика в trial.txt
 	TrialBlock   bool   = false // Блокировка "хитрых" триальщиков. false - нет блокировки
 	TrialfileLAN string = ``    // файл в сети пример `S:\trial.txt`
 
@@ -37,12 +40,63 @@ var ( // true - включение функции, false - выключение
 	CommentMessageON bool = true // сообщение с комментарием клиента. false - сообщение не будет приходить
 )
 
-func getConfigBot() (BotToken string, Chat_IDint, UserID, serviceChatID int64) {
-	BotToken = "23434234:sdfsef23rfsf" // "enter_your_bot_toket"
-	Chat_IDint = 12312333              // чат, куда будут приходить информация
-	UserID = 12312333                  // пользователь, от которого будут приниматься команды
-	ServiceChatID = 0                  // чат для сервисных сообщений, 0 - отправка в Chat_IDint
-	return BotToken, Chat_IDint, UserID, serviceChatID
+func getConfigBot(hostname string) (BotToken string, Chat_IDint, UserID, serviceChatID int64) {
+
+	Chat_IDint = -56743243234 // чат, куда будут приходить информация
+	UserID = 3453523234234    // пользователь, от которого будут приниматься команды
+	ServiceChatID = 0         // чат для сервисных сообщений, 0 - отправка в Chat_IDint
+
+	if oneBot4all {
+		BotToken = "123123:qweq" // токен для станции
+	} else {
+		station1 := "Station1"      // имя ПК на станции1
+		botToken1 := "11111:qweq"   // токен для станции1
+		station2 := "Station2"      // имя ПК на станции2
+		botToken2 := "22222:qweq"   // токен для станции2
+		station3 := "Station3"      // имя ПК на станции3
+		botToken3 := "33333:qweq"   // токен для станции3
+		station4 := "Station4"      // имя ПК на станции4
+		botToken4 := "1325523:qweq" // токен для станции4
+		station5 := "Station5"      // имя ПК на станции5
+		botToken5 := "1222253:qweq" // токен для станции5
+		station6 := "Station6"      // имя ПК на станции6
+		botToken6 := "1244443:qweq" // токен для станции6
+		station7 := "Station7"      // имя ПК на станции7
+		botToken7 := "123123:qweq"  // токен для станции7
+		station8 := "Station8"      // имя ПК на станции8
+		botToken8 := "123123:qweq"  // токен для станции8
+		station9 := "Station9"      // имя ПК на станции9
+		botToken9 := "123123:qweq"  // токен для станции9
+		station10 := "Station10"    // имя ПК на станции10
+		botToken10 := "123123:qweq" // токен для станции10
+
+		switch hostname {
+		case station1:
+			BotToken = botToken1
+		case station2:
+			BotToken = botToken2
+		case station3:
+			BotToken = botToken3
+		case station4:
+			BotToken = botToken4
+		case station5:
+			BotToken = botToken5
+		case station6:
+			BotToken = botToken6
+		case station7:
+			BotToken = botToken7
+		case station8:
+			BotToken = botToken8
+		case station9:
+			BotToken = botToken9
+		case station10:
+			BotToken = botToken10
+		default:
+			BotToken = botToken1
+		}
+	}
+
+	return BotToken, Chat_IDint, UserID, ServiceChatID
 }
 
 func getConfigFile(fileConfig string) {
