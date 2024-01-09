@@ -83,7 +83,7 @@ func sessionInfo(status string) (infoString string) {
 							}
 							log.Printf("[INFO] Заблокировано соединение: %s. Trial %d", data.Sessions[0].Creator_ip, sumTrial)
 							time.Sleep(10 * time.Second)
-							err = runCommand("taskkill", "/IM", "ese.exe", "/F")
+							err = runCommand("taskkill", "/IM", "ese.exe", "/F") // закрываем стример сервиса
 							if err != nil {
 								log.Println("[ERORR] Ошибка выполнения команды:", err)
 								return

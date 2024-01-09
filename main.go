@@ -991,16 +991,31 @@ func esmeCheck(hostname string) {
 				x++
 			}
 
-			if !checkIfProcessRunning("esme.exe") || (serv[y].Status == "OFFLINE" && serv[y].Public) { // если сервис не запущен
-				chatMessage := fmt.Sprintf("ВНИМАНИЕ! Станции %s offline", hostname) // формируем сообщение
-				err := SendMessage(BotToken, ServiceChatID, chatMessage)             // отправка сообщения
+			responseString, err := getFromURL(UrlSessions, "server_id", serverID)
+			if err != nil {
+				chatMessage := hostname + "невозможно получить данные с сайта"
+				log.Println("[ERROR] Невозможно получить данные с сайта")
+				err := SendMessage(BotToken, ServiceChatID, chatMessage) // отправка сообщения
 				if err != nil {
 					log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 				}
-				log.Printf("[INFO] Станции %s offline\n", hostname) // записываем в лог
-				i++                                                 // ведем счет отправленных сообщений
 			} else {
-				i, y = 0, 0
+				var data SessionsData                         // структура SessionsData
+				json.Unmarshal([]byte(responseString), &data) // декодируем JSON файл
+				statusSession := data.Sessions[0].Status
+				if !checkIfProcessRunning("esme.exe") || (serv[y].Status == "OFFLINE" && serv[y].Public) { // если сервис не запущен
+					var chatMessage string
+					chatMessage = fmt.Sprintf("ВНИМАНИЕ! Станции %s offline\n", hostname) // формируем сообщение
+					chatMessage += fmt.Sprintf("Статус сессии - %s", statusSession)
+					err := SendMessage(BotToken, ServiceChatID, chatMessage) // отправка сообщения
+					if err != nil {
+						log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
+					}
+					log.Printf("[INFO] Станции %s offline\n", hostname) // записываем в лог
+					i++                                                 // ведем счет отправленных сообщений
+				} else {
+					i, y = 0, 0
+				}
 			}
 		}
 	}
