@@ -884,7 +884,7 @@ func commandBot(tokenBot, hostname string, userID int64) {
 						log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 						return
 					}
-				} else if strings.Contains(messageT, "/offlinereboot") {
+				} else if strings.Contains(messageT, "/delayreboot") {
 					if strings.Contains(messageT, honame) { // Проверяем, что в тексте упоминается имя ПК
 						go delayReboot()
 						message := fmt.Sprintf("Будет выполнена перезагрузка %s по окончании сессии", hname)
@@ -937,6 +937,24 @@ func commandBot(tokenBot, hostname string, userID int64) {
 						}
 					} else {
 						anotherPC(hostname)
+					}
+				} else if strings.Contains(messageT, "/start") {
+					message := fmt.Sprintln("Доступные комманды. ST1 имя вашего ПК")
+					message += fmt.Sprintln("/rebootST1 - перезагрузить ST1")
+					message += fmt.Sprintln("/delayrebootST1 - перезагрузка ST1 когда закончится сесси")
+					message += fmt.Sprintln("/visibleST1 - скрыть ST1")
+					message += fmt.Sprintln("/invisibleST1 - скрыть ST1")
+					message += fmt.Sprintln("/status - статус серверов")
+					message += fmt.Sprintln("/temp - температуры")
+					message += fmt.Sprintln("/drovastartST1 - старт Streaming Service ST1")
+					message += fmt.Sprintln("/drovastopST1 - стоп Streaming Service ST1")
+					// message += fmt.Sprintln("")
+					// message += fmt.Sprintln("")
+
+					err := SendMessage(BotToken, userID, message)
+					if err != nil {
+						log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
+						return
 					}
 				} else {
 					messageText := "Неизвестная команда"
