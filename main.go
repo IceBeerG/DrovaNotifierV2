@@ -1238,6 +1238,8 @@ func delayReboot(n int) {
 							time.Sleep(1 * time.Minute)
 							log.Println("[INFO] Станция offline, сессия завершена. Перезагружаем сервер")
 							rebootPC()
+						} else if statusServer != "OFFLINE" {
+							i = n + 1
 						}
 					}
 					time.Sleep(1 * time.Minute)
