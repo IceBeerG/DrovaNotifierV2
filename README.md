@@ -20,12 +20,12 @@
 Для выяснения ID чата или ID пользователя можно воспользоваться ботом https://t.me/username_to_id_bot
 
 Команды которые можно применять в боте. Вначале / убран чтобы было проще скормить в BotFather для использования готовых команд, ST3 - имя вашейго ПК, на котором крутится бот
-
-rebootST3 - перезагрузить St3
-delayrebootST3 - отложенная перезагрузка St3
-visibleST3 - скрыть St3
-invisibleST3 - скрыть St3
-status - статус серверов
-temp - температуры
-drovastartST3 - старт Streaming Service St3
-drovastopST3 - стоп Streaming Service St3
+<BR>
+rebootST3 - перезагрузить St3<BR>
+delayrebootST3 - отложенная перезагрузка St3<BR>
+visibleST3 - скрыть St3<BR>
+invisibleST3 - скрыть St3<BR>
+status - статус серверов<BR>
+temp - температуры<BR>
+drovastartST3 - старт Streaming Service St3<BR>
+drovastopST3 - стоп Streaming Service St3<BR>
