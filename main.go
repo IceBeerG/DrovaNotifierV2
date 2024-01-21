@@ -1143,7 +1143,12 @@ func viewStation(seeSt, serverID string) error {
 
 func GetComment(status string) {
 	chatMessage := sessionInfo(status) // формируем сообщение с комментарием
-	if chatMessage != "off" && chatMessage != "" {
+	if status == "Comment" {
+		err := SendMessage(BotToken, ServiceChatID, chatMessage) // отправка сообщения
+		if err != nil {
+			log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
+		}
+	} else if chatMessage != "off" && chatMessage != "" {
 		err := SendMessage(BotToken, Chat_IDint, chatMessage) // отправка сообщения
 		if err != nil {
 			log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
