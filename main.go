@@ -28,6 +28,7 @@ var (
 	fileConfig, fileGames, hostname, ipInfo, trialfile string
 	serverID, authToken, mmdbASN, mmdbCity, Session_ID string
 	isRunning                                          bool
+	infoHTML                                           string
 )
 
 const (
@@ -265,6 +266,7 @@ func SendMessage(botToken string, chatID int64, text string) error {
 
 	i = 0
 	message := tgbotapi.NewMessage(chatID, text)
+	message.ParseMode = "HTML"
 	for i = 0; i < 3; i++ {
 		_, err = bot.Send(message)
 		if err != nil {

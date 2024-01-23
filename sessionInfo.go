@@ -94,8 +94,10 @@ func sessionInfo(status string) (infoString string) {
 			}
 			localAddr, nameInterface := getInterface()
 			serverIP = "\n" + nameInterface + " - " + localAddr
+			game = fmt.Sprintf("<b><i> %s </i></b>", game)
+			infoHTML = hname + game + "\n" + ipInfo + "\n" + sessionOn + " - " + billing + serverIP
+			infoString = "<b>🟢</b>" + infoHTML
 
-			infoString = "[+]" + hname + game + "\n" + ipInfo + "\n" + sessionOn + " - " + billing + serverIP
 		}
 	} else if status == "Stop" { // высчитываем продолжительность сессии и формируем текст для отправки
 		var minute int
@@ -156,15 +158,16 @@ func sessionInfo(status string) (infoString string) {
 				if dataS.Sessions[0].Abort_comment != "" {
 					comment = "\n" + dataS.Sessions[0].Abort_comment
 				}
+				game = fmt.Sprintf("<b><i> %s </i></b>", game)
 				if !StartMessageON {
 					if OnlineIpInfo {
 						ipInfo = onlineDBip(dataS.Sessions[0].Creator_ip)
 					} else {
 						ipInfo = offlineDBip(dataS.Sessions[0].Creator_ip)
 					}
-					infoString = "[-]" + hname + game + "\n" + sessionDur + "\n" + dataS.Sessions[0].Creator_ip + ipInfo + "\n" + comment + billingTrial + "\n" + serverIP
+					infoString = "<b>🔴</b>" + hname + game + "\n" + sessionDur + "\n" + dataS.Sessions[0].Creator_ip + ipInfo + "\n" + comment + billingTrial + "\n" + serverIP
 				} else {
-					infoString = "[-]" + hname + game + "\n" + dataS.Sessions[0].Creator_ip + " - " + sessionDur + comment + billingTrial
+					infoString = "<b>🔴</b>" + hname + game + "\n" + dataS.Sessions[0].Creator_ip + " - " + sessionDur + comment + billingTrial
 				}
 
 			} else {
@@ -195,7 +198,7 @@ func sessionInfo(status string) (infoString string) {
 					sessionDur, _ = dur(stopTime, startTime)
 					commentC = dataC.Sessions[0].Comment
 					log.Printf("[INFO] Получение комментария %s\n, %s ", dataC.Sessions[0].Creator_ip, session_ID)
-					infoString = hname + " - " + game + "\n" + dataC.Sessions[0].Creator_ip + " - " + sessionDur + "\n" + commentC
+					infoString = "<b>🟡</b>" + hname + " - " + "<b><i>" + game + "<b><i>" + "\n" + dataC.Sessions[0].Creator_ip + " - " + sessionDur + "\n" + commentC
 					i = 18
 				}
 			}
