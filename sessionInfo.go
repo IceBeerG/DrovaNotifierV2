@@ -198,7 +198,7 @@ func sessionInfo(status string) (infoString string) {
 					sessionDur, _ = dur(stopTime, startTime)
 					commentC = dataC.Sessions[0].Comment
 					log.Printf("[INFO] Получение комментария %s\n, %s ", dataC.Sessions[0].Creator_ip, session_ID)
-					infoString = "<b>🟡</b>" + hname + " - " + "<b><i>" + game + "</b></i>" + "\n" + dataC.Sessions[0].Creator_ip + " - " + sessionDur + "\n" + commentC
+					infoString = "<b>🟡</b>" + hname + " - " + "<b><i>" + game + "</i></b>" + "\n" + dataC.Sessions[0].Creator_ip + " - " + sessionDur + "\n" + commentC
 					i = 18
 				}
 			}
