@@ -35,7 +35,6 @@ const (
 	newTitle    = "Drova Notifier v2"                                  // Имя окна программы
 	UrlSessions = "https://services.drova.io/session-manager/sessions" // инфо по сессиям
 	UrlServers  = "https://services.drova.io/server-manager/servers"   // для получения инфо по серверам
-	localPort   = "139"                                                // порт для определения IP станции
 )
 
 // для выгрузки названий игр с их ID
@@ -1224,14 +1223,15 @@ func delayReboot(n int) {
 		if err != nil {
 			log.Println("[ERROR] Ошибка получения статусов: ", err, getLine())
 		} else {
+			var i int
 			if statusSession != "ACTIVE" {
-				chatMessage := fmt.Sprintf("Станция %s %s", hostname, statusServer)
+				chatMessage := fmt.Sprintf("Станция %s %s\n", hostname, statusServer)
 				chatMessage += fmt.Sprintf("Статус сессии - %s", statusSession)
 				err := SendMessage(BotToken, ServiceChatID, chatMessage) // отправка сообщения
 				if err != nil {
 					log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 				}
-				for i := 0; i <= n; i++ {
+				for i = 0; i <= n; i++ {
 					_, statusServer, _, err := statusServSession()
 					if err != nil {
 						log.Println("[ERROR] Ошибка получения статусов: ", err, getLine())
@@ -1250,6 +1250,9 @@ func delayReboot(n int) {
 						}
 					}
 					time.Sleep(1 * time.Minute)
+				}
+				if i > n {
+					break
 				}
 			}
 		}
