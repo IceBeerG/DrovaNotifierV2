@@ -51,7 +51,7 @@ func CheckHWt(hostname string) {
 			tCPUavg := tCPUsum / 6
 			if tCPUavg > CPUtmax {
 				chatMessage := fmt.Sprintf("Внимание! "+hname+"\nt CPU: %.1f °C\nt CPU avg:  %.1f °C", tCPU, tCPUavg)
-				err := SendMessage(BotToken, ServiceChatID, chatMessage)
+				_, err := SendMessage(BotToken, ServiceChatID, chatMessage, 0)
 				if err != nil {
 					log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 				}
@@ -68,7 +68,7 @@ func CheckHWt(hostname string) {
 			tCPUavg := tCPUsum / 6
 			if tCPUavg < CPUtmax-DeltaT {
 				chatMessage := fmt.Sprintf("Норма. "+hname+"\nt CPU: %.1f °C\nt CPU avg:  %.1f °C", tCPU, tCPUavg)
-				err := SendMessage(BotToken, ServiceChatID, chatMessage)
+				_, err := SendMessage(BotToken, ServiceChatID, chatMessage, 0)
 				if err != nil {
 					log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 				}
@@ -95,7 +95,7 @@ func CheckHWt(hostname string) {
 				if fan2 != -1 {
 					chatMessage += fmt.Sprintf("Fan2: %.0f RPM - %.0f %%\n", fan2, fanp2)
 				}
-				err := SendMessage(BotToken, ServiceChatID, chatMessage)
+				_, err := SendMessage(BotToken, ServiceChatID, chatMessage, 0)
 				if err != nil {
 					log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 				}
@@ -108,7 +108,7 @@ func CheckHWt(hostname string) {
 			if fan2 != -1 {
 				chatMessage += fmt.Sprintf("Fan2: %.0f RPM - %.0f %%\n", fan2, fanp2)
 			}
-			err := SendMessage(BotToken, ServiceChatID, chatMessage)
+			_, err := SendMessage(BotToken, ServiceChatID, chatMessage, 0)
 			if err != nil {
 				log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 			}
@@ -138,7 +138,7 @@ func CheckHWt(hostname string) {
 						chatMessage += fmt.Sprintf("Fan2: %.0f RPM - %.0f %%\n", fan2, fanp2)
 					}
 				}
-				err := SendMessage(BotToken, ServiceChatID, chatMessage)
+				_, err := SendMessage(BotToken, ServiceChatID, chatMessage, 0)
 				if err != nil {
 					log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 				}
@@ -167,7 +167,7 @@ func CheckHWt(hostname string) {
 						chatMessage += fmt.Sprintf("Fan2: %.0f RPM - %.0f %%\n", fan2, fanp2)
 					}
 				}
-				err := SendMessage(BotToken, ServiceChatID, chatMessage)
+				_, err := SendMessage(BotToken, ServiceChatID, chatMessage, 0)
 				if err != nil {
 					log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 				}
@@ -184,7 +184,7 @@ func GetTemperature() (tCPU, tGPU, tGPUhs, fan1, fanp1, fan2, fanp2 float64, tMe
 	_, err := http.Get("http://localhost:8085/data.json")
 	if err != nil {
 		log.Println("[ERROR] web-сервер LHM недоступен")
-		err := SendMessage(BotToken, ServiceChatID, "web-сервер LHM недоступен")
+		_, err := SendMessage(BotToken, ServiceChatID, "web-сервер LHM недоступен", 0)
 		if err != nil {
 			log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 		}

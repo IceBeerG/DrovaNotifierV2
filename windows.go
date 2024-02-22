@@ -35,7 +35,11 @@ func videoDriver() (vDrv string) {
 	vDrv = ""
 	for _, controller := range controllers {
 		if !strings.Contains(controller.Name, "Drova Display") {
-			vDrv += fmt.Sprintf("%s driver: %s\n", controller.Name, controller.DriverVersion)
+			if strings.Contains(strings.ToLower(controller.Name), "nvidia") {
+				vDrv += fmt.Sprintf("%s driver version: %s\n", controller.Name, NVdriverVersion())
+			} else {
+				vDrv += fmt.Sprintf("%s driver version: %s\n", controller.Name, controller.DriverVersion)
+			}
 		}
 	}
 	return
@@ -69,7 +73,7 @@ func antiCheat(hostname string, checkAntiCheat bool) {
 			} else if os.IsNotExist(err) {
 				log.Printf("[INFO] Внимание!%s\nОтсутствует файл %s", hname, key)
 				message := fmt.Sprintf("[INFO] Внимание!%s\nОтсутствует файл %s", hname, key)
-				err := SendMessage(BotToken, ServiceChatID, message)
+				_, err := SendMessage(BotToken, ServiceChatID, "<b>⚠️</b>"+message, 0)
 				if err != nil {
 					log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 					return
@@ -110,8 +114,8 @@ func diskSpace(hostname string, checkFreeSpace bool) {
 		// Если text не пустой, значит есть диск со свободным местом менее 10%, отправляем сообщение
 		if text != "" {
 			message := fmt.Sprintf("Внимание!%s\n%s", hname, text)
-			log.Print(text)
-			err := SendMessage(BotToken, ServiceChatID, message)
+			log.Print("[Warning] ", text)
+			_, err := SendMessage(BotToken, ServiceChatID, "<b>⚠️</b>"+message, 0)
 			if err != nil {
 				log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 			}
@@ -177,7 +181,7 @@ func messageStartWin(hostname string) {
 	}
 
 	lastBootUpTime := osInfo[0].LastBootUpTime
-	formattedTime := lastBootUpTime.Format("02-01-2006 15:04:05")
+	formattedTime := lastBootUpTime.Format("15:04:05 02-01-2006")
 	log.Println("[INFO] Windows запущен - ", formattedTime)
 	// Получаем текущее время
 	currentTime := time.Now()
@@ -192,8 +196,8 @@ func messageStartWin(hostname string) {
 		if viewHostname {
 			hname = hostname + " "
 		}
-		message := fmt.Sprintf("Станция %sзапущена менее 5 минут назад!\nВремя запуска - %s\n%s", hname, formattedTime, verDriver)
-		err := SendMessage(BotToken, ServiceChatID, message)
+		message := fmt.Sprintf("Станция %sзапущена в %s\n%s", hname, formattedTime, verDriver)
+		_, err := SendMessage(BotToken, ServiceChatID, "<b>⚠️</b>"+message, 0)
 		if err != nil {
 			log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 		}
@@ -223,4 +227,81 @@ func getLinkSpeed(interfaceName string) string {
 		}
 	}
 	return ""
+}
+
+func NVdriverVersion() (driverVersion string) {
+	cmd := exec.Command("nvidia-smi", "--query-gpu=driver_version", "--format=csv,noheader")
+	stdout, err := cmd.Output()
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	driverVersion = strings.TrimSpace(string(stdout))
+	return
+}
+
+// Проверяем запущен ли Drova service
+func esmeCheck(hostname string) {
+	var i, y uint8 = 0, 0
+	for {
+		// если процесс не запущен, с каждой следующей проверкой увеличиваем задержку отправки сообщения
+		// используя переменную i. 2-е оповещение через 20минут после первого, 3-е через 30минут после второго
+		// после отправки 3х сообщений, отправляем оповещение\напоминание с интервалом в 2часа
+		if i < 3 {
+			for y = 0; y <= i; y++ {
+				time.Sleep(5 * time.Minute) // интервал проверки
+			}
+		} else {
+			time.Sleep(60 * time.Minute) // интервал проверки
+		}
+
+		statusSession, statusServer, public, err := statusServSession()
+		if err != nil {
+			log.Println("[ERROR] Ошибка получения статусов: ", err, getLine())
+		} else {
+			if !checkIfProcessRunning("esme.exe") || (statusServer == "OFFLINE" && public) { // если сервис не запущен
+				var chatMessage string
+				time.Sleep(2 * time.Minute)
+				_, statusServer, _, err := statusServSession()
+				if err != nil {
+					log.Println("[ERROR] Ошибка получения статусов: ", err, getLine())
+				} else {
+					if statusServer == "OFFLINE" {
+						chatMessage = fmt.Sprintf("ВНИМАНИЕ! Станция %s offline\n", hostname) // формируем сообщение
+						chatMessage += fmt.Sprintf("Статус сессии - %s\n", statusSession)
+						_, err := SendMessage(BotToken, ServiceChatID, "<b>❗</b>"+chatMessage, 0) // отправка сообщения
+						if err != nil {
+							log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
+						}
+						go delayReboot(10)
+						log.Printf("[INFO] Станции %s offline\n", hostname) // записываем в лог
+						i++                                                 // ведем счет отправленных сообщений
+					}
+				}
+			} else {
+				i, y = 0, 0
+			}
+		}
+	}
+}
+
+func anotherPC(hostname string) {
+	messageText := fmt.Sprintf("Имя ПК не совпадает: %s\n", hostname)
+	_, err := SendMessage(BotToken, Chat_IDint, messageText, 0)
+	if err != nil {
+		log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
+	}
+}
+
+// проверка на валидность токена
+func validToken(regFolder, authToken string) {
+	for {
+		authTokenV := regGet(regFolder, "auth_token") // получаем токен для авторизации
+		if authToken != authTokenV {
+			log.Println("[INFO] Токен не совпадает, перезапуск приложения")
+			restart()
+		}
+		time.Sleep(5 * time.Minute)
+	}
 }
