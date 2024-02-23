@@ -15,6 +15,7 @@ var ( // true - включение функции, false - выключение
 	CommandON    bool = true // включить команды управления ботом
 	viewHostname bool = true // указывать имя станции в сообщениях
 	oneBot4all   bool = true // для всех станций используем 1 учетку бота
+	offlineReboot bool = true  // авторебут если станция оффлайн
 
 	OnlineIpInfo      bool = true  // инфо по IP online
 	AutoUpdateGeolite bool = false // автообновление файлов GeoLite с Github
