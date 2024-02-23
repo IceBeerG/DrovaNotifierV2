@@ -274,7 +274,9 @@ func esmeCheck(hostname string) {
 						if err != nil {
 							log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 						}
-						go delayReboot(10)
+						if offlineReboot {
+							go delayReboot(10)
+						}
 						log.Printf("[INFO] Станции %s offline\n", hostname) // записываем в лог
 						i++                                                 // ведем счет отправленных сообщений
 					}
