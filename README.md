@@ -30,4 +30,3 @@ invisibleST3 - скрыть St3<BR>
 status - статус серверов<BR>
 temp - температуры<BR>
 
-Благодарности принимаю сюда - https://qiwi.com/n/ICEBEERG
