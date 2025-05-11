@@ -105,7 +105,7 @@ func sessionInfo(status string) (infoString string) {
 
 		session_ID := Session_ID
 
-		for i := 0; i < 12; i++ {
+		for i := 0; i != 60; {
 			responseString, err := getFromURL(UrlSessions, "uuid", session_ID)
 			if err != nil {
 				log.Println("[ERROR] Stop. Невозможно получить данные с сайта")
@@ -121,7 +121,7 @@ func sessionInfo(status string) (infoString string) {
 					_, stopTime = dateTimeS(data.Sessions[0].Finished_on)
 					_, startTime = dateTimeS(data.Sessions[0].Created_on)
 					sessionDur, minute = dur(stopTime, startTime)
-					i = 12
+					i = 60
 				}
 			}
 		}
