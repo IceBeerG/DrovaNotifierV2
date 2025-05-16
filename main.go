@@ -27,23 +27,22 @@ var (
 )
 
 const (
-	newTitle    = "Drova Notifier v2"                                  // Имя окна программы
-	UrlSessions = "https://services.drova.io/session-manager/sessions" // инфо по сессиям
-	UrlServers  = "https://services.drova.io/server-manager/servers"   // для получения инфо по серверам
+	UrlSessions = "https://services.drova.io/session-manager/sessions" // Инфо по сессиям
+	UrlServers  = "https://services.drova.io/server-manager/servers"   // Для получения инфо по серверам
 )
 
-// для выгрузки названий игр с их ID
+// Product для выгрузки названий игр с их ID
 type Product struct {
 	ProductID string `json:"productId"`
 	Title     string `json:"title"`
 }
 
-// для получения провайдера в оффлайн базе
+// ASNRecord для получения провайдера в офлайн базе
 type ASNRecord struct {
 	AutonomousSystemOrganization string `maxminddb:"autonomous_system_organization"`
 }
 
-// для получения города региона в оффлайн базе
+// CityRecord для получения города региона в офлайн базе
 type CityRecord struct {
 	City struct {
 		Names map[string]string `maxminddb:"names"`
@@ -53,7 +52,7 @@ type CityRecord struct {
 	} `maxminddb:"subdivisions"`
 }
 
-// online инфо по IP
+// IPInfoResponse online инфо по IP
 type IPInfoResponse struct {
 	IP     string `json:"ip"`
 	City   string `json:"city"`
@@ -61,7 +60,7 @@ type IPInfoResponse struct {
 	ISP    string `json:"org"`
 }
 
-// структура для выгрузки ID и названия серверов
+// Структура для выгрузки ID и названия серверов
 type serverManager []struct {
 	Server_id    string `json:"uuid"`
 	Name         string `json:"name"`
@@ -71,7 +70,7 @@ type serverManager []struct {
 	SessionStart int64  `json:"alive_since"`
 }
 
-// для получения времени запуска windows
+// Win32_OperatingSystem для получения времени запуска windows
 type Win32_OperatingSystem struct {
 	LastBootUpTime time.Time
 }
@@ -89,7 +88,7 @@ func main() {
 	// Получаем текущую директорию программы
 	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {
-		log.Println("[ERROR] Ошибка получения текущей деректории: ", err, getLine())
+		log.Println("[ERROR] Ошибка получения текущей директории: ", err, getLine())
 		restart()
 	}
 	// Устанавливаем файл в качестве вывода для логгера
@@ -114,7 +113,7 @@ func main() {
 	fileGames = filepath.Join(dir, "games.txt")
 	fileConfig = filepath.Join(dir, "config.txt")
 	mmdbASN = filepath.Join(dir, "GeoLite2-ASN.mmdb")   // файл оффлайн базы IP. Провайдер
-	mmdbCity = filepath.Join(dir, "GeoLite2-City.mmdb") // файл оффлайн базы IP. Город и область
+	mmdbCity = filepath.Join(dir, "GeoLite2-City.mmdb") // Файл офлайн базы IP. Город и область
 
 	getConfigFile(fileConfig)
 
@@ -208,7 +207,7 @@ func main() {
 						log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 					}
 				}
-				i = 2 //т.к. приложение запущено, выходим из цикла
+				i = 2 // Т.к. приложение запущено, выходим из цикла
 			}
 			time.Sleep(5 * time.Second) // интервал проверки запущенного процесса
 		}
@@ -238,16 +237,17 @@ func main() {
 	}
 }
 
-// получение строки кода где возникла ошибка
+// Получение строки кода, где возникла ошибка
 func getLine() string {
 	_, _, line, _ := runtime.Caller(1)
 	lineErr := fmt.Sprintf("\nОшибка в строке: %d", line)
 	return lineErr
 }
 
-// получение списка игр с их ID
+// Получение списка игр с их ID
 func gameID(fileGames string) {
 	// Отправить GET-запрос на API
+	waitForSiteAvailable("https://services.drova.io/")
 	respGame, err := http.Get("https://services.drova.io/product-manager/product/listfull2")
 	if err != nil {
 		fmt.Println("[ERROR] Ошибка при выполнении запроса:", err, getLine())
@@ -282,7 +282,7 @@ func gameID(fileGames string) {
 	time.Sleep(1 * time.Second)
 }
 
-// конвертирование дат
+// Конвертирование дат
 func dateTimeS(data int64) (string, time.Time) {
 
 	// Создание объекта времени
@@ -296,7 +296,7 @@ func dateTimeS(data int64) (string, time.Time) {
 	return formattedTime, t
 }
 
-// высчитываем продолжительность сессии
+// Высчитываем продолжительность сессии
 func dur(stopTime, startTime time.Time) (string, int) {
 	var minutes int
 	var sessionDur string
@@ -375,9 +375,9 @@ func getASNRecord(mmdbCity, mmdbASN string, ip net.IP) (*CityRecord, *ASNRecord,
 	return &recordCity, &recordASN, err
 }
 
-// полученные данных из оффлайн базы
+// Полученные данных из офлайн базы
 func offlineDBip(ip string) string {
-	var city, region, asn string = "", "", ""
+	var city, region, asn = "", "", ""
 
 	cityRecord, asnRecord, err := getASNRecord(mmdbCity, mmdbASN, net.ParseIP(ip))
 	if err != nil {
@@ -436,7 +436,7 @@ func offlineDBip(ip string) string {
 	return ipInfo
 }
 
-// trial - создание или обновление записи по ключу(ip)
+// Trial - создание или обновление записи по ключу(ip)
 func createOrUpdateKeyValue(key string, value int) {
 	data := readDataFromFile()
 	// Проверяем, существует ли уже ключ в файле
@@ -472,7 +472,7 @@ func getValueByKey(key string) int {
 	return -1 // Возвращаем -1, если ключ не найден
 }
 
-// trial - читаем файл построчно и сздаем слайс
+// Trial - читаем файл построчно и создаем слайс
 func readDataFromFile() []string {
 	file, err := os.Open(trialfile)
 	if err != nil {
@@ -489,7 +489,7 @@ func readDataFromFile() []string {
 	return lines
 }
 
-// trial записываем слайс в файл построчно
+// Trial записываем слайс в файл построчно
 func writeDataToFile(data []string) {
 	file, err := os.OpenFile(trialfile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
@@ -506,7 +506,7 @@ func writeDataToFile(data []string) {
 	}
 }
 
-// получаем данные из файла в виде ключ = значение
+// Получаем данные из файла в виде ключ = значение
 func readConfig(keys, filename string) (string, error) {
 	var gname string
 	file, err := os.Open(filename)
@@ -540,6 +540,7 @@ func readConfig(keys, filename string) (string, error) {
 }
 
 func getFromURL(url, cell, IDinCell string) (responseString string, err error) {
+	waitForSiteAvailable("https://services.drova.io")
 	_, err = http.Get("https://services.drova.io")
 	if err != nil {
 		log.Println("[ERROR] Сайт https://services.drova.io недоступен")
@@ -575,7 +576,7 @@ func getFromURL(url, cell, IDinCell string) (responseString string, err error) {
 		var buf bytes.Buffer
 		_, err = io.Copy(&buf, resp.Body)
 		if err != nil {
-			log.Println("[ERROR] Ошибка записи запроса в буффер: ", err, getLine())
+			log.Println("[ERROR] Ошибка записи запроса в буфер: ", err, getLine())
 			return "", err
 		}
 
@@ -585,7 +586,7 @@ func getFromURL(url, cell, IDinCell string) (responseString string, err error) {
 	return responseString, err
 }
 
-// получаем IP интерфейса с наибольшей скоростью исходящего трафика
+// Получаем IP интерфейса с наибольшей скоростью исходящего трафика
 func getInterface() (localAddr, nameInterface string) {
 
 	var localIP, maxInterfaceName, linkSpeed string
@@ -617,8 +618,9 @@ func getInterface() (localAddr, nameInterface string) {
 	return localAddr, maxInterfaceName + linkSpeed
 }
 
-// скрыть\отобразить станцию
+// Скрыть\отобразить станцию
 func viewStation(seeSt, serverID string) error {
+	waitForSiteAvailable("https://services.drova.io/")
 	resp, err := http.Get("https://services.drova.io")
 	if err != nil {
 		fmt.Println("Сайт недоступен")

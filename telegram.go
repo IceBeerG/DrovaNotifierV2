@@ -12,9 +12,11 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-// отправка сообщения ботом
+// SendMessage отправка сообщения ботом
 func SendMessage(botToken string, chatID int64, text string, mesID int) (messageID int, err error) {
-	var i int = 0
+	var i = 0
+
+	waitForSiteAvailable("https://telegram.org/")
 
 	bot, err := tgbotapi.NewBotAPI(botToken)
 	if err != nil {
@@ -27,9 +29,6 @@ func SendMessage(botToken string, chatID int64, text string, mesID int) (message
 		messageIDstr := fmt.Sprint(mesID)
 		chatIDstr := fmt.Sprint(chatID)
 		err := delMessage(chatIDstr, messageIDstr)
-		// msg := tgbotapi.NewDeleteMessage(chatID, messageID)
-		// _, err := bot.Send(msg)
-		// err := deleteMessage(chatID, messageID)
 		if err != nil {
 			log.Println("[ERROR] Ошибка удаления сообщения", err, getLine())
 		}
@@ -44,7 +43,7 @@ func SendMessage(botToken string, chatID int64, text string, mesID int) (message
 			log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 			time.Sleep(1 * time.Second)
 			return 0, err
-		} else if err == nil {
+		} else {
 			messageID = sentMsg.MessageID
 			i = 3
 		}
@@ -54,6 +53,9 @@ func SendMessage(botToken string, chatID int64, text string, mesID int) (message
 }
 
 func delMessage(chatID, messageID string) error {
+
+	waitForSiteAvailable("https://telegram.org/")
+
 	url := fmt.Sprintf("https://api.telegram.org/bot%s/deleteMessage", BotToken)
 
 	requestBody, err := json.Marshal(map[string]string{
@@ -304,10 +306,6 @@ func commandBot(tokenBot, hostname string, userID int64) {
 					message += fmt.Sprintln("/invisibleST1 - скрыть ST1")
 					message += fmt.Sprintln("/status - статус серверов")
 					message += fmt.Sprintln("/temp - температуры")
-					// message += fmt.Sprintln("/drovastartST1 - старт Streaming Service ST1")
-					// message += fmt.Sprintln("/drovastopST1 - стоп Streaming Service ST1")
-					// message += fmt.Sprintln("")
-					// message += fmt.Sprintln("")
 
 					_, err := SendMessage(BotToken, userID, message, 0)
 					if err != nil {

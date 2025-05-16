@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -20,11 +21,30 @@ type SessionsData struct {
 		Status        string `json:"status"`
 		Creator_ip    string `json:"creator_ip"`
 		Abort_comment string `json:"abort_comment"` //or null
-		Score         string `json:"score"`         //or null
-		ScoreReason   string `json:"score_reason"`  //or null
+		Score         int64  `json:"score"`         //or null
+		ScoreReason   int64  `json:"score_reason"`  //or null
 		Comment       string `json:"score_text"`    //or null
 		Billing_type  string `json:"billing_type"`  // or null
 	}
+}
+
+type Session struct {
+	UUID          string `json:"uuid"`
+	Client_id     string `json:"client_id"`
+	Product_id    string `json:"product_id"`
+	CreatedOn     int64  `json:"created_on"`
+	FinishedOn    int64  `json:"finished_on,omitempty"`
+	Status        string `json:"status"`
+	Creator_ip    string `json:"creator_ip"`
+	Abort_comment string `json:"abort_comment"` //or null
+	Score         int64  `json:"score"`         //or null
+	ScoreReason   int64  `json:"score_reason"`  //or null
+	Comment       string `json:"score_text"`    //or null
+	Billing_type  string `json:"billing_type"`  // or null
+}
+
+type SessionManager struct {
+	Sessions []Session `json:"sessions"`
 }
 
 func sessionInfo(status string) (infoString string) {
@@ -40,31 +60,35 @@ func sessionInfo(status string) (infoString string) {
 			infoString = hname + "невозможно получить данные с сайта"
 			log.Println("[ERROR] Невозможно получить данные с сайта")
 		} else {
-			var data SessionsData                         // структура SessionsData
-			json.Unmarshal([]byte(responseString), &data) // декодируем JSON файл
-			Session_ID = data.Sessions[0].Session_uuid
-			log.Printf("[INFO] Подключение %s, billing: %s\n", data.Sessions[0].Creator_ip, data.Sessions[0].Billing_type)
-			game, _ := readConfig(data.Sessions[0].Product_id, fileGames)
-			sessionOn, _ := dateTimeS(data.Sessions[0].Created_on)
+			var sm SessionManager
+			err = json.Unmarshal([]byte(responseString), &sm)
+			if err != nil {
+				log.Printf("[ERROR] Ошибка парсинга: %v\n", err)
+			}
+			session := sm.Sessions[0]
+			Session_ID = session.UUID
+			log.Printf("[INFO] Подключение %s, billing: %s\n", session.Creator_ip, session.Billing_type)
+			game, _ := readConfig(session.Product_id, fileGames)
+			sessionOn, _ := dateTimeS(session.CreatedOn)
 			ipInfo = ""
 
 			if OnlineIpInfo {
-				ipInfo = data.Sessions[0].Creator_ip + onlineDBip(data.Sessions[0].Creator_ip)
+				ipInfo = session.Creator_ip + onlineDBip(session.Creator_ip)
 			} else {
-				ipInfo = data.Sessions[0].Creator_ip + offlineDBip(data.Sessions[0].Creator_ip)
+				ipInfo = session.Creator_ip + offlineDBip(session.Creator_ip)
 			}
 			var billing string
-			billing = data.Sessions[0].Billing_type
+			billing = session.Billing_type
 			if billing != "" && billing != "trial" {
-				billing = data.Sessions[0].Billing_type
+				billing = session.Billing_type
 			}
 
 			if TrialON {
 				if billing == "trial" {
-					sumTrial = getValueByKey(data.Sessions[0].Creator_ip)
+					sumTrial = getValueByKey(session.Creator_ip)
 					if sumTrial == -1 { // нет записей по этому IP
-						createOrUpdateKeyValue(data.Sessions[0].Creator_ip, 0)
-						billing = data.Sessions[0].Billing_type
+						createOrUpdateKeyValue(session.Creator_ip, 0)
+						billing = session.Billing_type
 					} else if sumTrial >= 0 && sumTrial < 19 { // уже подключался, но не играл в общей сложности 19 минуту
 						billing = fmt.Sprintf("TRIAL %dмин", sumTrial)
 					} else if sumTrial > 18 { // начал злоупотреблять
@@ -82,7 +106,7 @@ func sessionInfo(status string) (infoString string) {
 							if err != nil {
 								log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 							}
-							log.Printf("[INFO] Заблокировано соединение: %s. Trial %d", data.Sessions[0].Creator_ip, sumTrial)
+							log.Printf("[INFO] Заблокировано соединение: %s. Trial %d", session.Creator_ip, sumTrial)
 							time.Sleep(10 * time.Second)
 							err = runCommand("taskkill", "/IM", "ese.exe", "/F") // закрываем стример сервиса
 							if err != nil {
@@ -99,96 +123,82 @@ func sessionInfo(status string) (infoString string) {
 			infoString = hname + game + "\n" + ipInfo + "\n" + sessionOn + " - " + billing + serverIP
 		}
 	} else if status == "Stop" { // высчитываем продолжительность сессии и формируем текст для отправки
-		var minute int
+
 		var sessionDur string
-		var stopTime, startTime time.Time
+		var minute int
 
-		session_ID := Session_ID
+		foundSession, sessionDur, minute := getTimeStopComment(Session_ID, "Stop")
 
-		for i := 0; i != 60; {
-			responseString, err := getFromURL(UrlSessions, "uuid", session_ID)
-			if err != nil {
-				log.Println("[ERROR] Stop. Невозможно получить данные с сайта")
-			} else {
-				var data SessionsData
-				json.Unmarshal([]byte(responseString), &data) // декодируем JSON файл
-				test := data.Sessions[0].Finished_on
-				if test == 0 {
-					time.Sleep(5 * time.Second)
-					text := fmt.Sprintf("stopTime = %d", data.Sessions[0].Finished_on)
-					sessionDur = text
-				} else {
-					_, stopTime = dateTimeS(data.Sessions[0].Finished_on)
-					_, startTime = dateTimeS(data.Sessions[0].Created_on)
-					sessionDur, minute = dur(stopTime, startTime)
-					i = 60
-				}
-			}
-		}
-
-		responseString, err := getFromURL(UrlSessions, "uuid", Session_ID)
-		if err != nil {
-			infoString = hname + "невозможно получить данные с сайта"
-		} else {
-			var dataS SessionsData                         // структура SessionsData
-			json.Unmarshal([]byte(responseString), &dataS) // декодируем JSON файл
-			log.Printf("[INFO] Отключение %s\n", dataS.Sessions[0].Creator_ip)
-			billing := dataS.Sessions[0].Billing_type
-			if sessionDur != "off" {
-				var billingTrial string = ""
-				if TrialON {
-					if billing == "trial" {
-						sumTrial = getValueByKey(dataS.Sessions[0].Creator_ip)
-						if sumTrial < 20 || !TrialBlock {
-							ipTrial := dataS.Sessions[0].Creator_ip
-							handshake := dataS.Sessions[0].Abort_comment
-							if !strings.Contains(handshake, "handshake") { // если кнопка "Играть тут" активированна, добавляем время в файл
-								createOrUpdateKeyValue(ipTrial, minute)
-							}
-							sumTrial = getValueByKey(dataS.Sessions[0].Creator_ip)
-							billingTrial = fmt.Sprintf("\nTrial %dмин", sumTrial)
-						} else if sumTrial > 20 && TrialBlock {
-							billingTrial = fmt.Sprintf("\nKICK - Trial %dмин", sumTrial)
+		billing := foundSession.Billing_type
+		if sessionDur != "off" {
+			var billingTrial string = ""
+			if TrialON {
+				if billing == "trial" {
+					sumTrial = getValueByKey(foundSession.Creator_ip)
+					if sumTrial < 20 || !TrialBlock {
+						ipTrial := foundSession.Creator_ip
+						handshake := foundSession.Abort_comment
+						if !strings.Contains(handshake, "handshake") { // если кнопка "Играть тут" активированна, добавляем время в файл
+							createOrUpdateKeyValue(ipTrial, minute)
 						}
+						sumTrial = getValueByKey(foundSession.Creator_ip)
+						billingTrial = fmt.Sprintf("\nTrial %dмин", sumTrial)
+					} else if sumTrial > 20 && TrialBlock {
+						billingTrial = fmt.Sprintf("\nKICK - Trial %dмин", sumTrial)
 					}
 				}
-				var comment string
-				if dataS.Sessions[0].Abort_comment != "" {
-					comment = " - " + dataS.Sessions[0].Abort_comment
-				}
-				infoString = "\n" + sessionDur + comment + billingTrial
-			} else {
-				infoString = "off"
 			}
+			var comment string
+			if foundSession.Abort_comment != "" {
+				comment = " - " + foundSession.Abort_comment
+			}
+
+			infoString = "\n" + sessionDur + comment + billingTrial
+		} else {
+			infoString = "off"
 		}
+
 	} else if status == "Comment" { // проверяем написание коммента
-		var sessionDur, commentC, game string
-		var stopTime, startTime time.Time
-		var dataC SessionsData
+		var game, scoreReason string
 
-		session_ID := Session_ID
-
-		for i := 0; i < 18; i++ {
-			responseString, err := getFromURL(UrlSessions, "uuid", session_ID)
-			if err != nil {
-				infoString = hname + "невозможно получить данные с сайта"
-				log.Println("[ERROR] Невозможно получить данные с сайта")
-			} else {
-				json.Unmarshal([]byte(responseString), &dataC) // декодируем JSON файл
-				if dataC.Sessions[0].Comment == "" {
-					time.Sleep(10 * time.Second)
-				} else {
-					log.Printf("[INFO] Отключение %s\n", dataC.Sessions[0].Creator_ip)
-					game, _ = readConfig(dataC.Sessions[0].Product_id, fileGames)
-					_, stopTime = dateTimeS(dataC.Sessions[0].Finished_on)
-					_, startTime = dateTimeS(dataC.Sessions[0].Created_on)
-					sessionDur, _ = dur(stopTime, startTime)
-					commentC = dataC.Sessions[0].Comment
-					log.Printf("[INFO] Получение комментария %s\n, %s ", dataC.Sessions[0].Creator_ip, session_ID)
-					infoString = hname + "<b><i>" + game + "</i></b>" + "\n" + dataC.Sessions[0].Creator_ip + " - " + sessionDur + "\n" + commentC
-					i = 18
-				}
+		foundSession, sessionDur, _ := getTimeStopComment(Session_ID, "Comment")
+		if foundSession.Comment == "" {
+			time.Sleep(10 * time.Second)
+		} else {
+			log.Printf("[INFO] Отключение %s\n", foundSession.Creator_ip)
+			game, _ = readConfig(foundSession.Product_id, fileGames)
+			score := "Оценка: " + strconv.FormatInt(foundSession.Score, 10) + "\n"
+			switch foundSession.ScoreReason {
+			case 0:
+				scoreReason = "Все ОК"
+			case 1:
+				scoreReason = "Игра не запустилась"
+			case 2:
+				scoreReason = "Лаги"
+			case 3:
+				scoreReason = "Тех. проблемы"
+			case 4:
+				scoreReason = "Обновления"
+			default:
+				scoreReason = "неизвестно"
 			}
+
+			if OnlineIpInfo {
+				ipInfo = foundSession.Creator_ip + onlineDBip(foundSession.Creator_ip)
+			} else {
+				ipInfo = foundSession.Creator_ip + offlineDBip(foundSession.Creator_ip)
+			}
+			var billing string
+			billing = foundSession.Billing_type
+			if billing != "" && billing != "trial" {
+				billing = foundSession.Billing_type
+			}
+			sessionOn, _ := dateTimeS(foundSession.CreatedOn)
+
+			headText := hname + "<b><i>" + game + "</i></b>" + "\n" + ipInfo + "\n" + sessionOn + " | " + sessionDur + "\n" + billing
+			log.Printf("[INFO] Получение комментария %s\n, %s ", foundSession.Creator_ip, foundSession.UUID)
+			infoString = headText + "\n" + score + scoreReason + "\n" + foundSession.Comment
+			//infoString = hname + "<b><i>" + game + "</i></b>" + "\n" + foundSession.Creator_ip + " - " + sessionDur + "\n" + foundSession.Comment
 		}
 	}
 	return infoString
@@ -201,4 +211,62 @@ func runCommand(command string, args ...string) error {
 		return err
 	}
 	return nil
+}
+
+func getTimeStopComment(targetUUID, searchData string) (foundSession *Session, sessionDur string, minute int) {
+
+	time.Sleep(5 * time.Second)
+	for i := 0; i < 10; i++ {
+		responseString, err := getFromURL(UrlSessions, "server_id", serverID)
+		if err != nil {
+			log.Println("[ERROR] Stop. Невозможно получить данные с сайта")
+			time.Sleep(5 * time.Second)
+		} else {
+			// Парсим JSON
+			var sm SessionManager
+			err = json.Unmarshal([]byte(responseString), &sm)
+			if err != nil {
+				log.Printf("[ERROR] Ошибка парсинга: %v\n", err)
+			}
+
+			if searchData == "Stop" {
+				// Ищем сессию по UUID
+				for _, session := range sm.Sessions {
+					if session.UUID == targetUUID {
+						foundSession = &session
+						break
+					}
+				}
+
+				if foundSession != nil {
+					if foundSession.FinishedOn != 0 {
+						i = 10
+					} else {
+						time.Sleep(5 * time.Second)
+					}
+				}
+
+			} else if searchData == "Comment" {
+				// Ищем сессию по UUID
+				for _, session := range sm.Sessions {
+					if session.UUID == targetUUID {
+						foundSession = &session
+						break
+					}
+				}
+
+				if foundSession.Comment == "" {
+					time.Sleep(30 * time.Second)
+				} else {
+					i = 10
+				}
+			}
+		}
+	}
+
+	_, stopTime := dateTimeS(foundSession.FinishedOn)
+	_, startTime := dateTimeS(foundSession.CreatedOn)
+	sessionDur, minute = dur(stopTime, startTime)
+
+	return
 }
