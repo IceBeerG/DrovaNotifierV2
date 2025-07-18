@@ -16,7 +16,7 @@ import (
 func SendMessage(botToken string, chatID int64, text string, mesID int) (messageID int, err error) {
 	var i = 0
 
-	waitForSiteAvailable("https://telegram.org/")
+	//waitForSiteAvailable("https://telegram.org/")
 
 	bot, err := tgbotapi.NewBotAPI(botToken)
 	if err != nil {
@@ -54,7 +54,7 @@ func SendMessage(botToken string, chatID int64, text string, mesID int) (message
 
 func delMessage(chatID, messageID string) error {
 
-	waitForSiteAvailable("https://telegram.org/")
+	//waitForSiteAvailable("https://telegram.org/")
 
 	url := fmt.Sprintf("https://api.telegram.org/bot%s/deleteMessage", BotToken)
 
@@ -131,108 +131,110 @@ func commandBot(tokenBot, hostname string, userID int64) {
 					} else {
 						anotherPC(hostname)
 					}
-				} else if strings.Contains(messageT, "/status") {
-					var serv serverManager // структура serverManager
-					responseData, err := getFromURL(UrlServers, "server_id", serverID)
-					log.Println("получили команду /статус")
-					if err != nil {
-						chatMessage := hostname + " Невозможно получить данные с сайта"
-						log.Println("[ERROR] Невозможно получить данные с сайта")
-						_, err := SendMessage(BotToken, userID, chatMessage, 0) // отправка сообщения
-						if err != nil {
-							log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
-						}
-					} else {
-						json.Unmarshal([]byte(responseData), &serv) // декодируем JSON файл
-
-						var serverName, status, messageText string
-						messageText = ""
-						i := 0
-						// messageText = fmt.Sprint(hname)
-						// log.Println("/статус - ошибок нет, собираем данные")
-						for range serv {
-							// log.Println("/статус - зашли в рэндж серверов")
-							var sessionStart, server_ID string
-							serverName = serv[i].Name
-							status = serv[i].Status // Получаем статус сервера
-							server_ID = serv[i].Server_id
-							// log.Println(serverName, "-", status, "-", server_ID)
-
-							if status == "BUSY" || status == "HANDSHAKE" { // Получаем время начала, если станция занят
-								var data SessionsData // структура SessionsData
-								responseData, err := getFromURL(UrlSessions, "server_id", server_ID)
+					/*
+						} else if strings.Contains(messageT, "/status") {
+							var serv serverManager // структура serverManager
+							//responseData, err := getFromURL(UrlServers, "server_id", serverID)
+							log.Println("получили команду /статус")
+							if err != nil {
+								chatMessage := hostname + " Невозможно получить данные с сайта"
+								log.Println("[ERROR] Невозможно получить данные с сайта")
+								_, err := SendMessage(BotToken, userID, chatMessage, 0) // отправка сообщения
 								if err != nil {
-									chatMessage := hostname + " Невозможно получить данные с сайта"
-									log.Println("[ERROR] Невозможно получить данные с сайта")
-									_, err := SendMessage(BotToken, userID, chatMessage, 0) // отправка сообщения
-									if err != nil {
-										log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
-									}
-									sessionStart = ""
-								} else {
-									json.Unmarshal([]byte(responseData), &data) // декодируем JSON файл
-									startTime, _ := dateTimeS(data.Sessions[0].Created_on)
-									sessionStart = fmt.Sprintf("\n%s", startTime)
+									log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 								}
 							} else {
-								sessionStart = ""
-							}
-							messageText += fmt.Sprintf("%s - %s%s\n\n", serverName, status, sessionStart)
-							i++
-						}
+								//json.Unmarshal([]byte(responseData), &serv) // декодируем JSON файл
 
-						_, err := SendMessage(BotToken, userID, messageText, 0)
-						if err != nil {
-							log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
-							return
-						}
-					}
-				} else if strings.Contains(messageT, "/visible") {
-					if strings.Contains(messageT, honame) { // Проверяем, что в тексте упоминается имя ПК
-						err := viewStation("true", serverID)
-						if err != nil {
-							log.Println("[ERROR] Ошибка смены статуса: ", err)
-							message := fmt.Sprintf("Ошибка. Станция %s не видна клиентам. Повторите попытку позже", hostname)
-							_, err = SendMessage(BotToken, userID, message, 0)
-							if err != nil {
-								log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
-								return
+								var serverName, status, messageText string
+								messageText = ""
+								i := 0
+								// messageText = fmt.Sprint(hname)
+								// log.Println("/статус - ошибок нет, собираем данные")
+								for range serv {
+									// log.Println("/статус - зашли в рэндж серверов")
+									var sessionStart, server_ID string
+									serverName = serv[i].Name
+									status = serv[i].Status // Получаем статус сервера
+									server_ID = serv[i].Server_id
+									// log.Println(serverName, "-", status, "-", server_ID)
+
+									if status == "BUSY" || status == "HANDSHAKE" { // Получаем время начала, если станция занят
+										var data SessionsData // структура SessionsData
+										responseData, err := getFromURL(UrlSessions, "server_id", server_ID)
+										if err != nil {
+											chatMessage := hostname + " Невозможно получить данные с сайта"
+											log.Println("[ERROR] Невозможно получить данные с сайта")
+											_, err := SendMessage(BotToken, userID, chatMessage, 0) // отправка сообщения
+											if err != nil {
+												log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
+											}
+											sessionStart = ""
+										} else {
+											json.Unmarshal([]byte(responseData), &data) // декодируем JSON файл
+											startTime, _ := dateTimeS(data.Sessions[0].Created_on)
+											sessionStart = fmt.Sprintf("\n%s", startTime)
+										}
+									} else {
+										sessionStart = ""
+									}
+									messageText += fmt.Sprintf("%s - %s%s\n\n", serverName, status, sessionStart)
+									i++
+								}
+
+								_, err := SendMessage(BotToken, userID, messageText, 0)
+								if err != nil {
+									log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
+									return
+								}
 							}
-						} else {
-							log.Printf("Станция %s в сети\n", hostname)
-							message := fmt.Sprintf("Станция %s видна клиентам", hostname)
-							_, err = SendMessage(BotToken, userID, message, 0)
-							if err != nil {
-								log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
-								return
+						} else if strings.Contains(messageT, "/visible") {
+							if strings.Contains(messageT, honame) { // Проверяем, что в тексте упоминается имя ПК
+								err := viewStation("true", serverID)
+								if err != nil {
+									log.Println("[ERROR] Ошибка смены статуса: ", err)
+									message := fmt.Sprintf("Ошибка. Станция %s не видна клиентам. Повторите попытку позже", hostname)
+									_, err = SendMessage(BotToken, userID, message, 0)
+									if err != nil {
+										log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
+										return
+									}
+								} else {
+									log.Printf("Станция %s в сети\n", hostname)
+									message := fmt.Sprintf("Станция %s видна клиентам", hostname)
+									_, err = SendMessage(BotToken, userID, message, 0)
+									if err != nil {
+										log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
+										return
+									}
+								}
+							} else {
+								anotherPC(hostname)
 							}
-						}
-					} else {
-						anotherPC(hostname)
-					}
-				} else if strings.Contains(messageT, "/invisible") {
-					if strings.Contains(messageT, honame) { // Проверяем, что в тексте упоминается имя ПК
-						err := viewStation("false", serverID)
-						if err != nil {
-							log.Println("[ERROR] Ошибка смены статуса: ", err)
-							message := fmt.Sprintf("Ошибка. Станция %s не спрятана от клиентов. Повторите попытку позже", hostname)
-							_, err = SendMessage(BotToken, userID, message, 0)
-							if err != nil {
-								log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
-								return
+						} else if strings.Contains(messageT, "/invisible") {
+							if strings.Contains(messageT, honame) { // Проверяем, что в тексте упоминается имя ПК
+								err := viewStation("false", serverID)
+								if err != nil {
+									log.Println("[ERROR] Ошибка смены статуса: ", err)
+									message := fmt.Sprintf("Ошибка. Станция %s не спрятана от клиентов. Повторите попытку позже", hostname)
+									_, err = SendMessage(BotToken, userID, message, 0)
+									if err != nil {
+										log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
+										return
+									}
+								} else {
+									log.Printf("Станция %s спрятана\n", hostname)
+									message := fmt.Sprintf("Станция %s спрятана от клиентов", hostname)
+									_, err = SendMessage(BotToken, userID, message, 0)
+									if err != nil {
+										log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
+										return
+									}
+								}
+							} else {
+								anotherPC(hostname)
 							}
-						} else {
-							log.Printf("Станция %s спрятана\n", hostname)
-							message := fmt.Sprintf("Станция %s спрятана от клиентов", hostname)
-							_, err = SendMessage(BotToken, userID, message, 0)
-							if err != nil {
-								log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
-								return
-							}
-						}
-					} else {
-						anotherPC(hostname)
-					}
+					*/
 				} else if strings.Contains(messageT, "/temp") {
 					log.Println("Получение температур и оборотов вентиляторов")
 					var message string
@@ -244,67 +246,70 @@ func commandBot(tokenBot, hostname string, userID int64) {
 						log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 						return
 					}
-				} else if strings.Contains(messageT, "/delayreboot") {
-					if strings.Contains(messageT, honame) { // Проверяем, что в тексте упоминается имя ПК
-						go delayReboot(0)
-						message := fmt.Sprintf("Будет выполнена перезагрузка %sпо окончании сессии", hname)
-						_, err := SendMessage(BotToken, userID, message, 0)
-						if err != nil {
-							log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
-							return
-						}
-					} else {
-						anotherPC(hostname)
-					}
-				} else if strings.Contains(messageT, "/drovastop") {
-					if strings.Contains(messageT, honame) { // Проверяем, что в тексте упоминается имя ПК
-						err := drovaService("stop")
-						if err != nil {
-							message := fmt.Sprintf("%sОшибка завершения задачи Streaming Service", hname)
-							_, err := SendMessage(BotToken, userID, message, 0)
-							if err != nil {
-								log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
-								return
+					/*
+						} else if strings.Contains(messageT, "/delayreboot") {
+							if strings.Contains(messageT, honame) { // Проверяем, что в тексте упоминается имя ПК
+								//go delayReboot(0)
+								//message := fmt.Sprintf("Будет выполнена перезагрузка %sпо окончании сессии", hname)
+								message := fmt.Sprint("функция отключена")
+								_, err := SendMessage(BotToken, userID, message, 0)
+								if err != nil {
+									log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
+									return
+								}
+							} else {
+								anotherPC(hostname)
 							}
-						} else {
-							message := fmt.Sprintf("%sЗадача Streaming Service остановлена", hname)
-							_, err := SendMessage(BotToken, userID, message, 0)
-							if err != nil {
-								log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
-								return
+						} else if strings.Contains(messageT, "/drovastop") {
+							if strings.Contains(messageT, honame) { // Проверяем, что в тексте упоминается имя ПК
+								err := drovaService("stop")
+								if err != nil {
+									message := fmt.Sprintf("%sОшибка завершения задачи Streaming Service", hname)
+									_, err := SendMessage(BotToken, userID, message, 0)
+									if err != nil {
+										log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
+										return
+									}
+								} else {
+									message := fmt.Sprintf("%sЗадача Streaming Service остановлена", hname)
+									_, err := SendMessage(BotToken, userID, message, 0)
+									if err != nil {
+										log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
+										return
+									}
+								}
+							} else {
+								anotherPC(hostname)
 							}
-						}
-					} else {
-						anotherPC(hostname)
-					}
-				} else if strings.Contains(messageT, "/drovastart") {
-					if strings.Contains(messageT, honame) { // Проверяем, что в тексте упоминается имя ПК
-						err := drovaService("start")
-						if err != nil {
-							message := fmt.Sprintf("%sОшибка запуска задачи Streaming Service", hname)
-							_, err := SendMessage(BotToken, userID, message, 0)
-							if err != nil {
-								log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
-								return
+						} else if strings.Contains(messageT, "/drovastart") {
+							if strings.Contains(messageT, honame) { // Проверяем, что в тексте упоминается имя ПК
+								err := drovaService("start")
+								if err != nil {
+									message := fmt.Sprintf("%sОшибка запуска задачи Streaming Service", hname)
+									_, err := SendMessage(BotToken, userID, message, 0)
+									if err != nil {
+										log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
+										return
+									}
+								} else {
+									message := fmt.Sprintf("%sЗадача Streaming Service запущена", hname)
+									_, err := SendMessage(BotToken, userID, message, 0)
+									if err != nil {
+										log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
+										return
+									}
+								}
+							} else {
+								anotherPC(hostname)
 							}
-						} else {
-							message := fmt.Sprintf("%sЗадача Streaming Service запущена", hname)
-							_, err := SendMessage(BotToken, userID, message, 0)
-							if err != nil {
-								log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
-								return
-							}
-						}
-					} else {
-						anotherPC(hostname)
-					}
+					*/
 				} else if strings.Contains(messageT, "/start") {
 					message := fmt.Sprintln("Доступные комманды. ST1 имя вашего ПК")
 					message += fmt.Sprintln("/rebootST1 - перезагрузить ST1")
-					message += fmt.Sprintln("/delayrebootST1 - перезагрузка ST1 когда закончится сессия")
-					message += fmt.Sprintln("/visibleST1 - скрыть ST1")
-					message += fmt.Sprintln("/invisibleST1 - скрыть ST1")
-					message += fmt.Sprintln("/status - статус серверов")
+					//message += fmt.Sprintln("/delayrebootST1 - перезагрузка ST1 когда закончится сессия")
+					//message += fmt.Sprintln("/visibleST1 - скрыть ST1")
+					//message += fmt.Sprintln("/invisibleST1 - скрыть ST1")
+					//message += fmt.Sprintln("/status - статус серверов")
 					message += fmt.Sprintln("/temp - температуры")
 
 					_, err := SendMessage(BotToken, userID, message, 0)

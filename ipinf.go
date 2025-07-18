@@ -40,7 +40,7 @@ func getSpeed() (string, float64) {
 }
 
 func updateGeoLite(mmdbASN, mmdbCity string) {
-	waitForSiteAvailable("https://github.com/")
+	//waitForSiteAvailable("https://github.com/")
 	_, err := http.Get("https://github.com")
 	if err != nil {
 		log.Println("[ERROR] github.com недоступен. Обновление GeoLite невозможно")
@@ -59,7 +59,7 @@ func updateGeoLite(mmdbASN, mmdbCity string) {
 func downloadAndReplaceFileIfNeeded(url, filename string) int8 {
 	var z int8 = 0
 	time.Sleep(2 * time.Second)
-	waitForSiteAvailable("https://github.com/")
+	//waitForSiteAvailable("https://github.com/")
 	resp, err := http.Get("https://api.github.com/repos/P3TERX/GeoLite.mmdb/releases/latest")
 	if err != nil {
 		log.Println("[ERROR] Ошибка: ", err, getLine())
@@ -81,7 +81,7 @@ func downloadAndReplaceFileIfNeeded(url, filename string) int8 {
 
 	if fileModTime.Before(release.PublishedAt) {
 		// Отправка GET-запроса для загрузки файла
-		waitForSiteAvailable("https://github.com/")
+		//waitForSiteAvailable("https://github.com/")
 		resp, err := http.Get(url)
 		if err != nil {
 			log.Println("[ERROR] Ошибка отправки запроса: ", err, getLine())
@@ -140,7 +140,7 @@ func restartGeoLite(mmdbASN, mmdbCity string) {
 
 // инфо по IP - ipinfo.io
 func onlineDBip(ip string) (text string) {
-	waitForSiteAvailable("https://ipinfo.io/")
+	//waitForSiteAvailable("https://ipinfo.io/")
 	_, err := http.Get("https://ipinfo.io")
 	if err != nil {
 		fmt.Println("Сайт ipinfo.io недоступен")

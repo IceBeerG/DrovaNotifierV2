@@ -14,7 +14,6 @@ import (
 type SessionsData struct {
 	Sessions []struct {
 		Session_uuid  string `json:"uuid"`
-		Client_id     string `json:"client_id"`
 		Product_id    string `json:"product_id"`
 		Created_on    int64  `json:"created_on"`
 		Finished_on   int64  `json:"finished_on"` //or null
@@ -30,7 +29,6 @@ type SessionsData struct {
 
 type Session struct {
 	UUID          string `json:"uuid"`
-	Client_id     string `json:"client_id"`
 	Product_id    string `json:"product_id"`
 	CreatedOn     int64  `json:"created_on"`
 	FinishedOn    int64  `json:"finished_on,omitempty"`

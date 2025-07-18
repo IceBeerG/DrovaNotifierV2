@@ -23,7 +23,7 @@ type Win32NetworkAdapter struct {
 	Speed uint64
 }
 
-// Получаем версию видеодрайвера
+// Получаем версию видео драйвера
 func videoDriver() (vDrv string) {
 	var controllers []VideoController
 	query := "SELECT Name, DriverVersion FROM Win32_VideoController"
@@ -57,7 +57,7 @@ func rebootPC() {
 
 // Проверка файлов античитов
 func antiCheat(hostname string, checkAntiCheat bool) {
-	var hname string = ""
+	var hname = ""
 	if viewHostname {
 		hname = fmt.Sprintf(" Станция %s", hostname)
 	}
@@ -88,7 +88,7 @@ func antiCheat(hostname string, checkAntiCheat bool) {
 // Проверяем свободное место на дисках
 func diskSpace(hostname string, checkFreeSpace bool) {
 	if checkFreeSpace {
-		var text string = ""
+		var text = ""
 		partitions, err := disk.Partitions(false)
 		if err != nil {
 			log.Println(err, getLine())
@@ -107,7 +107,7 @@ func diskSpace(hostname string, checkFreeSpace bool) {
 				text += fmt.Sprintf("На диске %s свободно менее 10%%, %.2f Гб\n", partition.Mountpoint, freeSpace)
 			}
 		}
-		var hname string = ""
+		var hname = ""
 		if viewHostname {
 			hname = fmt.Sprintf(" Станция %s", hostname)
 		}
@@ -172,7 +172,7 @@ func checkIfProcessRunning(processName string) bool {
 	return strings.Contains(string(output), processName)
 }
 
-// оповещение о включении станции
+// Оповещение о включении станции
 func messageStartWin(hostname string) {
 	var osInfo []Win32_OperatingSystem
 	err := wmi.Query("SELECT LastBootUpTime FROM Win32_OperatingSystem", &osInfo)
@@ -191,7 +191,7 @@ func messageStartWin(hostname string) {
 
 	// Если прошло менее 5 минут с момента запуска Windows
 	if duration.Minutes() < 5 {
-		var hname string = ""
+		var hname = ""
 		verDriver := videoDriver()
 		if viewHostname {
 			hname = hostname + " "
@@ -242,12 +242,13 @@ func NVdriverVersion() (driverVersion string) {
 }
 
 // Проверяем запущен ли Drova service
+/*
 func esmeCheck(hostname string) {
 	var i, y uint8 = 0, 0
 	for {
-		// если процесс не запущен, с каждой следующей проверкой увеличиваем задержку отправки сообщения
+		// Если процесс не запущен, с каждой следующей проверкой увеличиваем задержку отправки сообщения
 		// используя переменную i. 2-е оповещение через 20минут после первого, 3-е через 30минут после второго
-		// после отправки 3х сообщений, отправляем оповещение\напоминание с интервалом в 2часа
+		// после отправки 3‑х сообщений, отправляем оповещение\напоминание с интервалом в 2часа
 		if i < 3 {
 			for y = 0; y <= i; y++ {
 				time.Sleep(5 * time.Minute) // интервал проверки
@@ -287,6 +288,7 @@ func esmeCheck(hostname string) {
 		}
 	}
 }
+*/
 
 func anotherPC(hostname string) {
 	messageText := fmt.Sprintf("Имя ПК не совпадает: %s\n", hostname)
@@ -296,7 +298,7 @@ func anotherPC(hostname string) {
 	}
 }
 
-// проверка на валидность токена
+// Проверка на валидность токена
 func validToken(regFolder, authToken string) {
 	for {
 		authTokenV := regGet(regFolder, "auth_token") // получаем токен для авторизации

@@ -17,10 +17,10 @@ func isSiteAvailable(url string) bool {
 }
 
 // Функция ожидания доступности сайта
-func waitForSiteAvailable(url string) {
+func waitForSiteAvailableee(url string) {
 	checkInterval := 5 * time.Second
 
-	for {
+	for i := 0; i < 10; i++ {
 		if isSiteAvailable(url) {
 			fmt.Printf("Сайт %s доступен\n", url)
 			return

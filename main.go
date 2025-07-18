@@ -10,7 +10,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -28,7 +27,7 @@ var (
 
 const (
 	UrlSessions = "https://services.drova.io/session-manager/sessions" // Инфо по сессиям
-	UrlServers  = "https://services.drova.io/server-manager/servers"   // Для получения инфо по серверам
+	//UrlServers  = "https://services.drova.io/server-manager/servers"   // Для получения инфо по серверам
 )
 
 // Product для выгрузки названий игр с их ID
@@ -61,6 +60,7 @@ type IPInfoResponse struct {
 }
 
 // Структура для выгрузки ID и названия серверов
+/*
 type serverManager []struct {
 	Server_id    string `json:"uuid"`
 	Name         string `json:"name"`
@@ -69,6 +69,7 @@ type serverManager []struct {
 	Public       bool   `json:"published"`
 	SessionStart int64  `json:"alive_since"`
 }
+*/
 
 // Win32_OperatingSystem для получения времени запуска windows
 type Win32_OperatingSystem struct {
@@ -171,7 +172,7 @@ func main() {
 	antiCheat(hostname, CheckAntiCheat) // проверка античитов
 	diskSpace(hostname, CheckFreeSpace) // проверка свободного места на дисках
 	messageStartWin(hostname)           // проверка времени запуска станции
-	go esmeCheck(hostname)              // запуск мониторинга сервиса дров
+	//go esmeCheck(hostname)              // запуск мониторинга сервиса дров
 	if checkIfProcessRunning("LibreHardwareMonitor.exe") && CheckTempON {
 		go CheckHWt(hostname) // мониторинг температур
 	} else if !checkIfProcessRunning("LibreHardwareMonitor.exe") && CheckTempON {
@@ -247,7 +248,7 @@ func getLine() string {
 // Получение списка игр с их ID
 func gameID(fileGames string) {
 	// Отправить GET-запрос на API
-	waitForSiteAvailable("https://services.drova.io/")
+	//waitForSiteAvailable("https://services.drova.io/")
 	respGame, err := http.Get("https://services.drova.io/product-manager/product/listfull2")
 	if err != nil {
 		fmt.Println("[ERROR] Ошибка при выполнении запроса:", err, getLine())
@@ -540,7 +541,7 @@ func readConfig(keys, filename string) (string, error) {
 }
 
 func getFromURL(url, cell, IDinCell string) (responseString string, err error) {
-	waitForSiteAvailable("https://services.drova.io")
+	//waitForSiteAvailable("https://services.drova.io")
 	_, err = http.Get("https://services.drova.io")
 	if err != nil {
 		log.Println("[ERROR] Сайт https://services.drova.io недоступен")
@@ -619,8 +620,9 @@ func getInterface() (localAddr, nameInterface string) {
 }
 
 // Скрыть\отобразить станцию
+/*
 func viewStation(seeSt, serverID string) error {
-	waitForSiteAvailable("https://services.drova.io/")
+	//waitForSiteAvailable("https://services.drova.io/")
 	resp, err := http.Get("https://services.drova.io")
 	if err != nil {
 		fmt.Println("Сайт недоступен")
@@ -647,6 +649,7 @@ func viewStation(seeSt, serverID string) error {
 	}
 	return err
 }
+*/
 
 func GetComment(status string, messageID int, infoSession string) {
 	chatMessage := sessionInfo(status) // формируем сообщение с комментарием
@@ -684,6 +687,7 @@ func GetComment(status string, messageID int, infoSession string) {
 // 	fmt.Println("Команда успешно выполнена")
 // }
 
+/*
 func statusServSession() (statusSession, statusServer string, public bool, err error) {
 	responseStringServers, err := getFromURL(UrlServers, "uuid", serverID)
 	if err != nil {
@@ -724,50 +728,54 @@ func statusServSession() (statusSession, statusServer string, public bool, err e
 	}
 	return statusSession, statusServer, public, err
 }
+*/
 
-func delayReboot(n int) {
-	for {
-		statusSession, statusServer, _, err := statusServSession()
-		if err != nil {
-			log.Println("[ERROR] Ошибка получения статусов: ", err, getLine())
-		} else {
-			var i int
-			if statusSession != "ACTIVE" {
-				chatMessage := fmt.Sprintf("Станция %s %s\n", hostname, statusServer)
-				chatMessage += fmt.Sprintf("Статус сессии - %s", statusSession)
-				_, err := SendMessage(BotToken, ServiceChatID, chatMessage, 0) // отправка сообщения
-				if err != nil {
-					log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
-				}
-				for i = 0; i <= n; i++ {
-					_, statusServer, _, err := statusServSession()
+/*
+	func delayReboot(n int) {
+		for {
+			statusSession, statusServer, _, err := statusServSession()
+			if err != nil {
+				log.Println("[ERROR] Ошибка получения статусов: ", err, getLine())
+			} else {
+				var i int
+				if statusSession != "ACTIVE" {
+					chatMessage := fmt.Sprintf("Станция %s %s\n", hostname, statusServer)
+					chatMessage += fmt.Sprintf("Статус сессии - %s", statusSession)
+					_, err := SendMessage(BotToken, ServiceChatID, chatMessage, 0) // отправка сообщения
 					if err != nil {
-						log.Println("[ERROR] Ошибка получения статусов: ", err, getLine())
-					} else {
-						if (statusServer == "OFFLINE" && i == n) || n == 0 {
-							chatMessage := fmt.Sprintf("Станция %s будет перезагружена через минуту", hostname)
-							_, err := SendMessage(BotToken, ServiceChatID, chatMessage, 0) // отправка сообщения
-							if err != nil {
-								log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
-							}
-							time.Sleep(1 * time.Minute)
-							log.Println("[INFO] Станция offline, сессия завершена. Перезагружаем сервер")
-							rebootPC()
-						} else if statusServer != "OFFLINE" {
-							i = n + 1
-						}
+						log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
 					}
-					time.Sleep(1 * time.Minute)
-				}
-				if i > n {
-					break
+					for i = 0; i <= n; i++ {
+						_, statusServer, _, err := statusServSession()
+						if err != nil {
+							log.Println("[ERROR] Ошибка получения статусов: ", err, getLine())
+						} else {
+							if (statusServer == "OFFLINE" && i == n) || n == 0 {
+								chatMessage := fmt.Sprintf("Станция %s будет перезагружена через минуту", hostname)
+								_, err := SendMessage(BotToken, ServiceChatID, chatMessage, 0) // отправка сообщения
+								if err != nil {
+									log.Println("[ERROR] Ошибка отправки сообщения: ", err, getLine())
+								}
+								time.Sleep(1 * time.Minute)
+								log.Println("[INFO] Станция offline, сессия завершена. Перезагружаем сервер")
+								rebootPC()
+							} else if statusServer != "OFFLINE" {
+								i = n + 1
+							}
+						}
+						time.Sleep(1 * time.Minute)
+					}
+					if i > n {
+						break
+					}
 				}
 			}
+			time.Sleep(1 * time.Minute)
 		}
-		time.Sleep(1 * time.Minute)
 	}
-}
+*/
 
+/*
 func drovaService(command string) (err error) {
 	path := "\\Drova\\Streaming Service"
 	if command == "stop" {
@@ -791,3 +799,4 @@ func drovaService(command string) (err error) {
 	}
 	return
 }
+*/
